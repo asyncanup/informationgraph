@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <link type="text/css" rel="stylesheet" href="stylesheets/main.css">
+    <script type="text/javascript" src="javascripts/main.js"></script>
+  </head>
+  <body>
+    {% if error %}
+      <div id="error">{{ error }}</div>
+    {% endif %}
+    <div id="add_item_form">
+      <form action="/additem" method="get">
+        <div>
+          <input type="text" name="value" class="item_input"/>
+          <input type="submit" value="Add" id="item_submit_button"/>
+        </div>
+      </form>
+    </div>
+
+    <div id="add_relation_form">
+      <form action="/addrelation" method="get">
+        <div>
+          <input type="text" name="subject" class="spo_input"/>
+          <input type="text" name="predicate" class="spo_input"/>
+          <input type="text" name="object" class="spo_input"/>
+          <input type="submit" value="Add" id="relation_submit_button"/>
+        </div>
+      </form>
+    </div>
+
+    <table class="item_list">
+      {% for item in items %}
+        <tr>
+          <td class="item">{{ item.value|escape }}</td>
+          <td class="delete_item">
+            <a href="/deleteitem?key={{ item.key|escape }}">delete</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+
+    <table class="relation_list">
+      {% for relation in relations %}
+        <tr>
+          <td class="subject">{{ relation.subject.value|escape }}</td>
+          <td class="predicate">{{ relation.predicate.value|escape }}</td>
+          <td class="object">{{ relation.object.value|escape }}</td>
+          <td class="delete_relation">
+            <a href="/deleterelation?key={{ relation.key|escape }}">delete</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+
+  </body>
+</html>

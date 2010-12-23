@@ -1,0 +1,119 @@
+<html>
+  <head>
+    <link type="text/css" rel="stylesheet" href="javascripts/autocomplete/styles.css">
+    <link type="text/css" rel="stylesheet" href="stylesheets/main.css">
+    <script type="text/javascript" src="javascripts/main.js"></script>
+    <script type="text/javascript" src="javascripts/prototype.js"></script>
+    <script type="text/javascript" src="javascripts/autocomplete/autocomplete.js"></script>
+  </head>
+  <body><div width="100%" align="center">
+    <h2 align="center">Add Data</h2><br/><br/>
+    {% if error %}
+      <div id="error">{{ error }}</div>
+    {% endif %}
+    <div id="autocomplete_input" width="100%" align="center">
+      <form action="/autocomplete_add_po" method="get" name="add_items_and_relation" id="add_items_and_relation">
+        <input type="text" id="autocomplete_selected" disabled="true" value="" size="1" style="display:none"/>
+        <input type="text" id="autocomplete" name="q"/>
+        <input type="hidden" id="subject_key_when_adding" name="subject_key_when_adding" value=""/>
+        <input type="submit" value="Add by search"/>
+      </form>
+    </div>
+    <hr/>
+    <div id="add_item_form">
+      <form action="/additem" method="get">
+        <div>
+          <input type="text" name="value" class="item_input"/>
+          <input type="submit" value="Add new item" id="item_submit_button"/>
+        </div>
+      </form>
+    </div>
+    <hr/>
+    <div id="add_relation_form">
+      <form action="/addrelation" method="get">
+        <div>
+          <input type="hidden" name="subject_item_key" id="subject_item_key"/>
+          <input type="hidden" name="predicate_item_key" id="predicate_item_key"/>
+          <input type="hidden" name="object_item_key" id="object_item_key"/>
+
+          <input type="text" id="subject_input" name="subject_new"/>
+          <input type="text" id="predicate_input" name="predicate_new"/>
+          <input type="text" id="object_input" name="object_new"/>
+          <input type="submit" value="Add relation" id="relation_submit_button"/>
+        </div>
+      </form>
+    </div>
+    <hr/>
+    <table class="relation_list" cellspacing="10px">
+      {% for relation in relations %}
+        <tr>
+          <td class="subject">{{ relation.subject.value|escape }}</td>
+          <td class="predicate">{{ relation.predicate.value|escape }}</td>
+          <td class="object">{{ relation.object.value|escape }}</td>
+          <td class="delete_relation">
+            <a href="/deleterelation?key={{ relation.key|escape }}">delete</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+    <hr/>
+    <table class="item_list" cellspacing="10px">
+      {% for item in items %}
+        <tr>
+          <td class="item">{{ item.value|escape }}</td>
+          <td class="delete_item">
+            <a href="/deleteitem?key={{ item.key|escape }}">delete</a>
+          </td>
+          <td class="item_key">{{ item.key|escape }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <script type="text/javascript">
+    //<![CDATA[
+      firsttime = true
+      selected_values = []
+      ac = new Autocomplete('autocomplete', {
+        serviceUrl: '/searchitems',
+        minChars: 0, // 2
+        maxHeight: 400,
+        deferRequestBy: 100,
+        onSelect: function(value, data){
+/*
+          // key_trace is like IGQL quey paths. subject predicate object keys are separated by space and nesting is done using brackets
+          ac.serviceUrl = '/autocomplete?key_trace=' + escape(data)
+          // alert('You selected: ' + value + ', ' + data)
+*/
+
+        //selected_values.push($('autocomplete').value)
+        //$('autocomplete').value = selected_values.join(" ")
+
+        $('autocomplete_selected').value += " " + value
+        $('autocomplete_selected').size = $('autocomplete_selected').value.length
+        $('autocomplete_selected').style.display = "inline"
+        $('autocomplete').value = ""
+        $('subject_key_when_adding').value = data
+        //ac.minChars = 0
+        ac.serviceUrl = '/autocomplete?subject=' + escape(data)
+        }
+      });
+
+      function autocomplete_input_options(spo) {
+        return {
+          serviceUrl: '/searchitems',
+          minChars: 2,
+          maxHeight: 400,
+          deferRequestBy: 100,
+          onSelect: function (value, data) {
+            $(spo + '_input').name = spo + "_chosen"
+            $(spo + '_item_key').value = data
+          }
+        }
+      }
+      s = new Autocomplete('subject_input', autocomplete_input_options("subject"))
+      p = new Autocomplete('predicate_input', autocomplete_input_options("predicate"));
+      o = new Autocomplete('object_input', autocomplete_input_options("object"));
+    //]]>
+    </script>
+  </body>
+</html>
