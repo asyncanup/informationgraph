@@ -8,7 +8,7 @@ Heading
 Another Heading
 --------------
 
-**Bold** *Italic*
+**Bold** and *Italic*
 
 * **`command -argument`**: `more`, `of`, `them`. See?
 
