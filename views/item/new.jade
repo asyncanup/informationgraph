@@ -1,0 +1,3 @@
+h2 New Item
+form(method='post', action='/items')
+  !=partial('item/fields', { locals: { item: item }})

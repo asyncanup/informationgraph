@@ -1,0 +1,12 @@
+h1 Items
+
+p
+  a(class='button', href='/item/new') + New Item
+
+ul
+  - for (var i in items)
+    li
+      a(class='button', href='/item/' +items[i].id + '/edit') Edit
+      a(class='button destroy', href='/item/' + items[i].id) Delete
+      a(href='/item/' + items[d].id)
+        =items[i].title
