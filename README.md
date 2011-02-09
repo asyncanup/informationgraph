@@ -3,7 +3,7 @@
 
 Heading
 ---------------------------------------
-* Bullet
+* Bullet Point
 
 Another Heading
 --------------
