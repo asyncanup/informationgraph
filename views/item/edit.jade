@@ -1,5 +1,0 @@
-h2 Edit Item Value
-form(method='post', action='/item/'+item.id)
-    input(name='item[id]', value=item.id, type='hidden')
-    input(name='_method', value='PUT', type='hidden')
-    !=partial('item/fields', { locals: {item: item} })
