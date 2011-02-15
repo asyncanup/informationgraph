@@ -14,13 +14,27 @@
       <p>Admin Options</p>
     </div>
   </body>
-  <script src="/_utils/script/jquery.js"></script>
-  <script src="/_utils/script/jquery.couch.js"></script>
+  <script src="scripts/jquery.js"></script>
+  <script src="scripts/jquery.couch.js"></script>
   <script type="text/javascript">
     $(document).ready(function(){
+        $.couch.urlPrefix = "http://127.0.0.1:5984"
         $("#items").click(function(){
           alert("hah"); 
         })
+        $.ajax({
+          type: "POST",
+          url: "http://127.0.0.1:5984/informationgraph/",
+          success: function(d) {console.log(d); alert(d);},
+          dataType: "json",
+          contentType: "application/json",
+          error: function(err){console.log(err); alert(err);},
+          data: '{                       \
+            "subject": "couch",    \
+            "predicate": "is",     \
+            "object": "relaxing"   \
+            }'
+        });
     });
   </script>
 </html>
