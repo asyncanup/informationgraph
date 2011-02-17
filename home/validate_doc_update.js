@@ -7,8 +7,12 @@ function (newDoc, savedDoc, userCtx){
   }
 
   function require(field, message){
-    message = message || newDoc.type + " must have a " + field + ".";
-    if (!newDoc[field]) throw({forbidden: message});
+    message = message || newDoc.type + " must have a " + field;
+    var context = newDoc;
+    field.split(".").forEach(function(field){
+      if (!context[field]) throw({forbidden: message});
+      context = context[field];
+    });
   }
 
   function unchanged(field){
@@ -21,6 +25,12 @@ function (newDoc, savedDoc, userCtx){
   }
 
   if (newDoc.type === "relation"){
+    //require("subject._id");
+    //require("subject.value");
+    //require("predicate._id");
+    //require("predicate.value");
+    //require("object._id");
+    //require("object.value");
     require("subject");
     require("predicate");
     require("object");
