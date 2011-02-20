@@ -2,7 +2,7 @@ function manageLogin(options) {
   options = options || {};
   var l = function(val){ if (options.debug) { console.log(val); }}
   var loginSelector = options.loginSelector || "#login";
-  var loginData = { name: "anup", password: "password" }
+  var loginData = options.loginData || {"name": "_", "password": "_"}
 
   var loginSuccessHandler = function(res){ 
     l("Login Successful");

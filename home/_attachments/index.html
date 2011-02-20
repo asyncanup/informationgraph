@@ -18,9 +18,10 @@
   <script src="scripts/jquery.js"></script>
   <script src="scripts/jquery.couch.js"></script>
   <script src="scripts/login.js"></script>
+  <script src="scripts/.loginData.js"></script>
   <script type="text/javascript">
     $(document).ready(function(){
-        manageLogin(); //({debug: true});
+        manageLogin({ "loginData": getLoginData() }); //.extend({debug: true});
 
 
         test = function(){
