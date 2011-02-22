@@ -9,6 +9,7 @@
     <h1>Information Graph</h1>
 
     <div id="items"></div>
+    <div id="newitem"></div>
 
     <div id="sidebar">
       <p>Admin Options</p>
@@ -17,12 +18,15 @@
   </body>
   <script src="scripts/jquery.js"></script>
   <script src="scripts/jquery.couch.js"></script>
-  <script src="scripts/login.js"></script>
+  <script src="scripts/jquery.ig.js"></script>
   <script src="scripts/.loginData.js"></script>
   <script type="text/javascript">
     $(document).ready(function(){
-        manageLogin({ "loginData": getLoginData() }); //.extend({debug: true});
+        $.ig.setDb("informationgraph")
+            .setupLogin({ "loginData": getLoginData() })
+            .setupForm({ "newItem": "#newitem", "debug": true });
 
+        $.ig.viewResults({ "selector": "#items", "query": "" });
 
         test = function(){
           $.ajax({

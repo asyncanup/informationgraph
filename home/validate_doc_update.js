@@ -36,6 +36,7 @@ function (newDoc, savedDoc, userCtx){
     require("object");
   }
 
-  require("created_at");
-  unchanged("created_at");
+  // TODO: uncomment these
+  //require("created_at");
+  //unchanged("created_at");
 }
