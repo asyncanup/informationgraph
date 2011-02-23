@@ -8,41 +8,26 @@
 
     <h1>Information Graph</h1>
 
-    <div id="items"></div>
-    <div id="newitem"></div>
+    <div id="items">
+      <ul id="itemList"></ul>
+    </div>
+    <div id="newItem"></div>
 
     <div id="sidebar">
       <p>Admin Options</p>
-      <button id="login"></button>
+      <button id="loginButton"></button>
     </div>
   </body>
+  <script id="itemTemplate" type="text/x-jquery-tmpl">
+    <li>
+      <b>${key}</b>
+    </li>
+  </script>
   <script src="scripts/jquery.js"></script>
   <script src="scripts/jquery.couch.js"></script>
   <script src="scripts/jquery.ig.js"></script>
+  <script src="scripts/jquery.tmpl.js"></script>
   <script src="scripts/.loginData.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function(){
-        $.ig.setDb("informationgraph")
-            .setupLogin({ "loginData": getLoginData() })
-            .setupForm({ "newItem": "#newitem", "debug": true });
-
-        $.ig.viewResults({ "selector": "#items", "query": "" });
-
-        test = function(){
-          $.ajax({
-            type: "POST",
-            url: "http://127.0.0.1:5984/informationgraph/",
-            success: function(d) {console.log(d); alert(d);},
-            dataType: "json",
-            contentType: "application/json",
-            error: function(err){console.log(err); alert(err);},
-            data: JSON.stringify({
-              "subject": "couch",
-              "predicate": "is",
-              "object": "relaxing"
-            })
-          }); 
-        }
-    });
-  </script>
+  <script src="scripts/shortenItem.js"></script>
+  <script src="scripts/startup.js"></script>
 </html>
