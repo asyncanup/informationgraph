@@ -3,7 +3,7 @@
 
   var db;
   function l(val) { 
-    if ($.ig.debug) { console.log(val); }
+    if ( window.console && $.ig.debug) { console.log(val); }
   };
 
   $.extend($.ig, {
@@ -32,16 +32,18 @@
                         }
                       },
     setupForm:        function(options){
-                        var form;
                         if (options.newItem){
+                          var form;
                           form = $(options.newItem);
                           form.append($('<input type="text" name="itemValue" value="new item value"/>'));
+                          var inputElem = $("input:first", form);
+                          inputElem.css({"width": "75%"});
                           form.append($('<input type="submit" class="submit" value="Put"/>'));
                           l("form set up in " + options.newItem);
                           form.submit(function(e){
                             db.saveDoc({
                               "type":   "item",
-                              "value":  $("input:first", form).val(),
+                              "value":  inputElem.val(),
                               "created_at": (new Date()).getTime()
                             }, {
                               "success":  function(data){
@@ -57,7 +59,7 @@
                                   "template": "#itemTemplate",
                                   "placeholder": "#itemList"
                                 });
-                                $("input:first", form).val("");
+                                inputElem.val("");
                               }
                             });
                             return false;

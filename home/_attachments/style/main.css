@@ -26,14 +26,9 @@ form {
   float:            left;
 }
 
-#items input {
-  width:            75%;
-}
-
 .submit {
   padding:          0px;
   margin:           0px;
-  width:            20%;
 }
 
 #items ul {
