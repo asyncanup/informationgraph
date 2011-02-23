@@ -6,17 +6,19 @@
   </head>
   <body>
 
+    <div id="sidebar">
+      <button id="loginButton"></button>
+    </div>
+
     <h1>Information Graph</h1>
 
     <div id="items">
+      <form id="itemFilter"></form>
       <ul id="itemList"></ul>
+      <form id="newItem"></form>
     </div>
-    <div id="newItem"></div>
 
-    <div id="sidebar">
-      <p>Admin Options</p>
-      <button id="loginButton"></button>
-    </div>
+    <div id="notificationBar"></div>
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
     <li>

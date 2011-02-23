@@ -4,8 +4,18 @@ $(document).ready(function(){
         "loginData": getLoginData(),
         "loginButton": "#loginButton"
       })
-      .setupForm({ "newItem": "#newItem" })
-      .pushViewResults("home/allItems", {
+      .setupForm({ 
+        "newItem":  "#newItem"
+      })
+      .setupForm({
+        "itemFilter": "#itemFilter",
+        "results":  {
+                      "placeholder": "#itemList",
+                      "template": "#itemTemplate"
+                    },
+        "viewQuery": "home/itemSuggestions"
+      })
+      .showViewResults("home/allItems", {
         "template": "#itemTemplate",
         "placeholder": "#itemList"
       });
