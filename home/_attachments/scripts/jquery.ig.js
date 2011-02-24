@@ -123,6 +123,6 @@
                         return this;
                       },
     debug:            true,
-    notificationBar:  "#notificationBar"
+    notificationBar:  "#notification"
   });
 })(jQuery);

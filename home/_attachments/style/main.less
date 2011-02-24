@@ -1,0 +1,94 @@
+// LESS
+
+/* THEME 1                    */
+/*@light-primary-1:   #65A6D1;*/
+/*@light-primary-2:   #3E97D1;*/
+/*@primary:           #0A67A3;*/
+/*@dark-primary-2:    #24587A;*/
+/*@dark-primary-1:    #03426A;*/
+
+/*@light-secondary-1: #FFC173;*/
+/*@light-secondary-2: #FFAA40;*/
+/*@secondary:         #FF8E00;*/
+/*@dark-secondary-2:  #BF8030;*/
+/*@dark-secondary-1:  #A65C00;*/
+
+/* THEME 2                    */
+@light-primary-1:   #B9E1FC;
+@light-primary-2:   #A0D8FC;
+@primary:           #B0C9F8;
+@dark-primary-2:    #76A0BA;
+@dark-primary-1:    #2A72A1;
+
+@light-secondary-1: #FFDFB7;
+@light-secondary-2: #FFD39C;
+@secondary:         #FFC57B;
+@dark-secondary-2:  #BF9F75;
+@dark-secondary-1:  #A66E28;
+
+@body-padding-top:  20px;
+@body-padding-left: 2%;
+
+@notification-height: 20px;
+
+@sidebar-width:     20%;
+
+body {
+  background-color: @light-primary-1;
+  font-family:      Arial, Helvetica, Sans-Serif;
+  font-size:        14px;
+  padding:          @body-padding-top @body-padding-left;
+}
+
+#header {
+  height:           40px;
+  border-bottom:    1px solid @dark-primary-2;
+  margin-bottom:    20px;
+
+  h1 {
+    color:          @dark-primary-1;
+    font-size:      25px;
+  }
+}
+
+  #login {
+    float:          right;
+    button {
+      background-color: @light-secondary-1;
+      border:           1px solid gray;
+    }
+  }
+
+  #notification {
+    position:         absolute;
+    top:              36px;
+    background-color: @light-primary-1;
+    border-color:     @dark-primary-2;
+    border-style:     solid solid none;
+    border-width:     1px 1px 0;
+    display:          block;
+    height:           @notification-height;
+    margin-left:      @body-padding-left + @sidebar-width;
+    padding:          2px 10px;
+    width:            50%;
+    color:            darken(@dark-primary-1, 30%);
+  }
+
+#content {
+}
+  #sidebar {
+    float:            left;
+    padding:          0 10px;
+    width:            @sidebar-width;
+  }
+
+    #itemList {
+      line-height:    1.6em;
+      .item {
+        
+      }
+    }
+
+    #main {
+      
+    }

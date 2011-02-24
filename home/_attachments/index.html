@@ -2,28 +2,33 @@
 <html>
   <head>
     <title>Information Graph</title>
-    <link rel="stylesheet" href="style/main.css" type="text/css">
+    <link rel="stylesheet" href="style/reset.css" type="text/css">
+    <link rel="stylesheet/less" href="style/main.less" type="text/css">
   </head>
   <body>
 
-    <div id="sidebar">
-      <button id="loginButton"></button>
+    <div id="header">
+      <div id="login">
+        <button id="loginButton"></button>
+      </div>
+      <h1>Information Graph</h1>
+      <div id="notification">Notification: </div>
     </div>
 
-    <h1>Information Graph</h1>
-
-    <div id="items">
-      <form id="itemFilter"></form>
-      <ul id="itemList"></ul>
-      <form id="newItem"></form>
+    <div id="content">
+      <div id="sidebar">
+        <form id="itemFilter"></form>
+        <ul id="itemList"></ul>
+        <form id="newItem"></form>
+      </div>
+      <div id="main"></div>
     </div>
 
-    <div id="notificationBar"></div>
+    <div id="footer"></div>
+
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
-    <li>
-      ${key}
-    </li>
+    <li id="${id}" class="item">${key}</li>
   </script>
   <script src="scripts/jquery.js"></script>
   <script src="scripts/jquery.couch.js"></script>
@@ -31,5 +36,6 @@
   <script src="scripts/jquery.tmpl.js"></script>
   <script src="scripts/.loginData.js"></script>
   <script src="scripts/shortenItem.js"></script>
+  <script src="scripts/less-1.0.41.min.js"></script>
   <script src="scripts/startup.js"></script>
 </html>

@@ -1,4 +1,3 @@
-/* add styles here */
 
 body {
   font:             1em Helvetica, sans-serif;
@@ -61,7 +60,7 @@ form {
   padding:          6px;
 }
 
-#notificationBar {
+#notification {
   margin-bottom:    0px;
   height:           20px;
   padding:          4px;
@@ -70,3 +69,4 @@ form {
   border:           2px solid #bbb;
   display:          none;
 }
+
