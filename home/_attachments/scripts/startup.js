@@ -17,7 +17,8 @@ $(document).ready(function(){
       })
       .showViewResults("home/allItems", {
         "template": "#itemTemplate",
-        "placeholder": "#itemList"
+        "placeholder": "#itemList",
+        "listener": true  // listens to and refreshes the changes in view results
       });
 
 

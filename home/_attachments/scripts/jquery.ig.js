@@ -2,26 +2,28 @@
   $.ig = $.ig || {};
 
   var db;
+  var nbSelector; // ui notification bar jquery selector
   function l(val) { 
     if ( window.console && $.ig.debug) { console.log(val); }
   };
 
   $.extend($.ig, {
-    setDb:            function(dbname){
-                        db = $.couch.db(dbname);
-                        l("db set to " + dbname);
-                        return this;
-                      },
-    getDb:            function(){ 
-                        l("db was asked for");
-                        return db; 
-                      },
-    setNotificationBar: function(selector){
-                          this.notificationBar = selector;
-                          l("notificationBar selector set to " + selector);
+    database:         function(dbname){ 
+                        if (dbname) {
+                          db = $.couch.db(dbname);
+                          l("db set to " + dbname);
                           return this;
-                        },
-    notifyUI:         function(content){
+                        } else {
+                          l("db was asked for");
+                          return db; 
+                        }
+                      },
+    notificationBar:  function(nb){
+                        if (nb) { nbSelector = nb; return this; } 
+                        else { return nbSelector || "#notification"; }
+                      },
+    notify:           function(content){
+                        // TODO: trigger view results refresh
                         if (content){
                           if (content.type === "creation"){
                             var bar = $(this.notificationBar);
@@ -37,7 +39,6 @@
                           form = $(options.newItem);
                           form.append($('<input type="text" name="itemValue" value="new item value"/>'));
                           var inputElem = $("input:first", form);
-                          inputElem.css({"width": "75%"});
                           form.append($('<input type="submit" class="submit" value="Put"/>'));
                           l("form set up in " + options.newItem);
                           form.submit(function(e){
@@ -49,15 +50,10 @@
                               "success":  function(data){
                                 l("saved document. data returned: " + data);
                                 l("notifying notification bar");
-                                $.ig.notifyUI({
+                                // now refresh the relevant view results
+                                $.ig.notify({
                                   "type": "creation",
                                   "data": data
-                                });
-                                // TODO: make gui for minimize, maximize and refresh buttons
-                                // and remove this stub
-                                $.ig.showViewResults("home/allItems", {
-                                  "template": "#itemTemplate",
-                                  "placeholder": "#itemList"
                                 });
                                 inputElem.val("");
                               }
@@ -74,6 +70,7 @@
                         options = options || {};
                         options.placeholder = options.placeholder || "#itemList";
                         options.template = options.template || "#itemTemplate";
+                        // TODO: register events with $.ig.notify to refresh view results when needed
                         db.view(view,{ 
                           success: function(data){ 
                                      l("view query returned successfully. Updating " + options.placeholder);
@@ -86,6 +83,7 @@
                         options = options || {};
 
                         var loginButton = options.loginButton || "#loginButton";
+                        // loginButton can be any element, not just a button
                         var loginData = options.loginData || {"name": "_", "password": "_"};
 
                         var loginSuccessHandler = function(res){ 
@@ -122,7 +120,6 @@
                         });
                         return this;
                       },
-    debug:            true,
-    notificationBar:  "#notification"
+    debug:            true
   });
 })(jQuery);
