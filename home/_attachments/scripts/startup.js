@@ -20,6 +20,7 @@ $(document).ready(function(){
       .showViewResults("home/allItems", {
         "template": "#itemTemplate",
         "placeholder": "#itemList",
+        "include_docs": true
       });
 
 

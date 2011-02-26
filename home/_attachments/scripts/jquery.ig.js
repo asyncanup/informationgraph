@@ -54,7 +54,15 @@
                             .text("Created: ").append(content.data.toString())
                             .fadeIn("fast").delay(4000).fadeOut("slow");
                         }
-                        function refreshViewResults(){
+                        if (content){
+                          if (content.type === "creation"){
+                            showNotification(content.data);
+                            that.refreshViewResults();
+                          }
+                        }
+                      },
+    refreshViewResults: function(){
+                          var that = this;
                           for (key in listeners){
                             var opts = $.extend(
                                 { "listener": false, "placeholder": key},
@@ -64,22 +72,15 @@
                             delete opts["view"];
                             that.showViewResults(view, opts);
                           }
-                        }
-                        if (content){
-                          if (content.type === "creation"){
-                            showNotification(content.data);
-                            refreshViewResults();
-                          }
-                        }
-                      },
+                        },
     setupForm:        function(options){
                         var that = this;
                         if (options.newItem){
                           var form;
                           form = $(options.newItem);
-                          form.append($('<input type="text" name="itemValue" value="new item value"/>'));
+                          form.append($('<input type="text" id="newItemInput" value="new item value"/>'));
                           var inputElem = $("input:first", form);
-                          form.append($('<input type="submit" class="submit" value="Put"/>'));
+                          //form.append($('<input type="submit" class="submit" value="Put"/>'));
                           l("form set up in " + options.newItem);
                           form.submit(function(e){
                             db.saveDoc({

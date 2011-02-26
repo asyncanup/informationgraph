@@ -12,13 +12,14 @@
         <button id="loginButton"></button>
       </div>
       <h1>Information Graph</h1>
-      <div id="notification">Notification: </div>
+      <div id="notification">: </div>
     </div>
 
     <div id="content">
       <div id="sidebar">
         <form id="itemFilter"></form>
-        <ul id="itemList"></ul>
+        <table id="itemList">
+        </table>
         <form id="newItem"></form>
       </div>
       <div id="main"></div>
@@ -28,7 +29,10 @@
 
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
-    <li id="${id}" class="item">${key}</li>
+    <tr id="${id}" rev="${doc._rev}" class="item">
+      <td class="itemValue">${key}</td>
+      <td class="itemDelete">x</td>
+    </tr>
   </script>
   <script src="scripts/jquery.js"></script>
   <script src="scripts/jquery.couch.js"></script>
