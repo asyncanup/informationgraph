@@ -4,19 +4,26 @@
   var db = "informationgraph";
   var nbSelector = "#notification"; // ui notification bar jquery selector
   var debugMode = true; // whether debug mode is on
+  var listeners = {};
+  // listenes has jquery dom selectors as keys and options hashes as values
+  // options have these fields:
+  //    view - what view to query. passed as is to db.view
+  //    template - what jquery template to use for data display
+  //    and other options to pass on as is to db.view (like query parameters), success/error handlers
+  // should not have a field called listener
   function l(val) { 
     if ( window.console && debugMode) { console.log(val); }
   };
+  function render(template, arrayData, placeholder){
+    $(placeholder).html("");
+    $(template).tmpl(arrayData).appendTo(placeholder);
+  }
 
   $.extend($.ig, {
     debug:            function(cmd){
                         // accepts string "start" or "stop"
                         if (cmd){
-                          if (cmd === "stop"){
-                            debugMode = false;
-                          } else {
-                            debugMode = true;
-                          }
+                          debugMode = (cmd === "stop") ? false : true;
                           return this;
                         } else {
                           return debugMode;
@@ -37,17 +44,36 @@
                         else { return nbSelector || "#notification"; }
                       },
     notify:           function(content){
-                        // TODO: trigger view results refresh
+                        // at every trigger of this function,
+                        // all registered view query listeners will be fired and refreshed
+                        var that = this;
+                        function showNotification(text){
+                          l("displaying notification bar");
+                          console.log(content.data);
+                          $(nbSelector)
+                            .text("Created: ").append(content.data.toString())
+                            .fadeIn("fast").delay(4000).fadeOut("slow");
+                        }
+                        function refreshViewResults(){
+                          for (key in listeners){
+                            var opts = $.extend(
+                                { "listener": false, "placeholder": key},
+                                listeners[key]
+                                );
+                            var view = opts["view"];
+                            delete opts["view"];
+                            that.showViewResults(view, opts);
+                          }
+                        }
                         if (content){
                           if (content.type === "creation"){
-                            var bar = $(this.notificationBar);
-                            bar.hide().text("Created: ").append(content.data.toString());
-                            l("displaying notification bar");
-                            bar.show("fast").delay(2000).hide("fast");
+                            showNotification(content.data);
+                            refreshViewResults();
                           }
                         }
                       },
     setupForm:        function(options){
+                        var that = this;
                         if (options.newItem){
                           var form;
                           form = $(options.newItem);
@@ -65,9 +91,9 @@
                                 l("saved document. data returned: " + data);
                                 l("notifying notification bar");
                                 // now refresh the relevant view results
-                                $.ig.notify({
+                                that.notify({
                                   "type": "creation",
-                                  "data": data
+                                  "data": "'" + inputElem.val() + "'"
                                 });
                                 inputElem.val("");
                               }
@@ -76,7 +102,7 @@
                           });
                           l("bound submit event handler to form with id: " + options.formId);
                         } else if (options.itemFilter){
-                          
+                          // TODO
                         }
                         return this;
                       },
@@ -84,14 +110,28 @@
                         options = options || {};
                         options.placeholder = options.placeholder || "#itemList";
                         options.template = options.template || "#itemTemplate";
-                        // TODO: register events with $.ig.notify to refresh view results when needed
-                        db.view(view,{ 
+                        var selector = options.placeholder;
+                        var template = options.template;
+                        if (options.listener !== false){
+                          // to listen is the default. 
+                          // unless listener explicitly set to false
+                          delete options["listener"];
+                          delete options["placeholder"];
+                          listeners[selector] = $.extend(options, {"view": view});
+                          // since the key is options.placeholder, 
+                          // previously set listeners can be changed by sending different view queries 
+                          // (with more specific options maybe?) with the same placeholder
+                        }
+                        delete options["template"];
+                        // extraneous options deleted. 
+                        // now the remaining can be sent to db.view as is
+                        db.view(view, $.extend(options, {
                           success: function(data){ 
-                                     l("view query returned successfully. Updating " + options.placeholder);
-                                     $(options.placeholder).html("");
-                                     $(options.template).tmpl(data.rows).appendTo(options.placeholder);
+                                     l("view query returned successfully, updating " + options.placeholder);
+                                     render(template, data.rows, selector);
                                    } 
-                        });
+                        }));
+                        return this;
                       },
     setupLogin:       function(options){
                         options = options || {};
