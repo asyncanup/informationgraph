@@ -15,16 +15,17 @@
     if ( window.console && debugMode) { console.log(val); }
   };
   function render(template, arrayData, placeholder){
-    l("rendering ");
+    l("rendering in " + placeholder);
     $(placeholder).html("");
     $(template).tmpl(arrayData).appendTo(placeholder);
   }
 
   $.extend($.ig, {
     debug:            function(cmd){
-                        // accepts string "start" or "stop"
+                        // stops with "stop", starts with anything else
                         if (cmd){
                           debugMode = (cmd === "stop") ? false : true;
+                          l("debug mode on");
                           return this;
                         } else {
                           return debugMode;
@@ -36,12 +37,15 @@
                           l("db set to " + dbname);
                           return this;
                         } else {
-                          l("db was asked for");
                           return db; 
                         }
                       },
     notificationBar:  function(nb){
-                        if (nb) { nbSelector = nb; return this; } 
+                        if (nb) { 
+                          nbSelector = nb; 
+                          l(nbSelector + " set as notification bar");
+                          return this; 
+                        }
                         else { return nbSelector || "#notification"; }
                       },
     notify:           function(content){
@@ -65,6 +69,7 @@
                       },
     refreshViewResults: function(){
                           var that = this;
+                          l("refreshing view results");
                           for (key in listeners){
                             var opts = $.extend(
                                 { "listener": false, "placeholder": key},
@@ -93,7 +98,7 @@
                               "created_at": (new Date()).getTime()
                             }, {
                               "success":  function(data){
-                                l("saved document, notifying notification bar");
+                                l("saved document, notifying app");
                                 // now refresh the relevant view results
                                 that.notify({
                                   "action": "Created",
@@ -121,6 +126,7 @@
                           // unless listener explicitly set to false
                           delete options["listener"];
                           delete options["placeholder"];
+                          l("registering listener for" + selector); 
                           listeners[selector] = $.extend(options, {"view": view});
                           // since the key is options.placeholder, 
                           // previously set listeners can be changed by sending different view queries 
@@ -139,12 +145,12 @@
                       },
     deleteItem:       function(id, rev, options){
                         var that = this;
-                        l("trying to delete");
+                        l("deleting item - (" + id + ", " + rev + ")");
                         db.removeDoc(
                             { "_id": id, "_rev": rev },
                             { 
                               success: function(data){
-                                         l("deleted item with id=" + id + ", rev=" + rev);
+                                         l("deleted item");
                                          that.notify({
                                            "action": "Deleted",
                                            "data": id
@@ -182,11 +188,11 @@
                           success: function(res){
                                      var toggleList = [];
                                      if (res.userCtx.roles.length === 0){
-                                       l("session.userCtx.roles is empty");
+                                       l("userCtx.roles is empty");
                                        $(loginButton).text("Login");
                                        $(loginButton).toggle(login, logout);
                                      } else {
-                                       l("session.userCtx.roles is non-empty");
+                                       l("userCtx.roles is non-empty");
                                        $(loginButton).text("Logout");
                                        $(loginButton).toggle(logout,login);  
                                      }
