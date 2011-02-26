@@ -1,5 +1,7 @@
 $(document).ready(function(){
-  $.ig.setDb("informationgraph")
+  $.ig.debug("start")
+      .database("informationgraph")
+      .notificationBar("#notification")
       .setupLogin({ 
         "loginData": getLoginData(),
         "loginButton": "#loginButton"

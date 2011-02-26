@@ -1,13 +1,27 @@
 (function($) {
   $.ig = $.ig || {};
 
-  var db;
-  var nbSelector; // ui notification bar jquery selector
+  var db = "informationgraph";
+  var nbSelector = "#notification"; // ui notification bar jquery selector
+  var debugMode = true; // whether debug mode is on
   function l(val) { 
-    if ( window.console && $.ig.debug) { console.log(val); }
+    if ( window.console && debugMode) { console.log(val); }
   };
 
   $.extend($.ig, {
+    debug:            function(cmd){
+                        // accepts string "start" or "stop"
+                        if (cmd){
+                          if (cmd === "stop"){
+                            debugMode = false;
+                          } else {
+                            debugMode = true;
+                          }
+                          return this;
+                        } else {
+                          return debugMode;
+                        }
+                      },
     database:         function(dbname){ 
                         if (dbname) {
                           db = $.couch.db(dbname);
@@ -119,7 +133,6 @@
                                    }
                         });
                         return this;
-                      },
-    debug:            true
+                      }
   });
 })(jQuery);
