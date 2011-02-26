@@ -15,6 +15,7 @@
     if ( window.console && debugMode) { console.log(val); }
   };
   function render(template, arrayData, placeholder){
+    l("rendering ");
     $(placeholder).html("");
     $(template).tmpl(arrayData).appendTo(placeholder);
   }
@@ -49,14 +50,15 @@
                         var that = this;
                         function showNotification(text){
                           l("displaying notification bar");
-                          console.log(content.data);
                           $(nbSelector)
-                            .text("Created: ").append(content.data.toString())
-                            .fadeIn("fast").delay(4000).fadeOut("slow");
+                            .text(content.action.toString() + ": '" + content.data.toString() + "'")
+                             // use of toString() is contentious, think about it. remove?
+                            .stop(true, true)
+                            .fadeIn("fast").delay(3000).fadeOut("slow");
                         }
                         if (content){
-                          if (content.type === "creation"){
-                            showNotification(content.data);
+                          if (content.action === "Created" || content.action === "Deleted"){
+                            showNotification(content);
                             that.refreshViewResults();
                           }
                         }
@@ -85,16 +87,17 @@
                           form.submit(function(e){
                             db.saveDoc({
                               "type":   "item",
-                              "value":  inputElem.val(),
+                              // trim, remove repeated whitespace in value string
+                              // this is a contentious issue, if this should be done or not
+                              "value":  inputElem.val().trim().replace(/\s+/g, ' '),
                               "created_at": (new Date()).getTime()
                             }, {
                               "success":  function(data){
-                                l("saved document. data returned: " + data);
-                                l("notifying notification bar");
+                                l("saved document, notifying notification bar");
                                 // now refresh the relevant view results
                                 that.notify({
-                                  "type": "creation",
-                                  "data": "'" + inputElem.val() + "'"
+                                  "action": "Created",
+                                  "data": inputElem.val()
                                 });
                                 inputElem.val("");
                               }
@@ -133,6 +136,22 @@
                                    } 
                         }));
                         return this;
+                      },
+    deleteItem:       function(id, rev, options){
+                        var that = this;
+                        l("trying to delete");
+                        db.removeDoc(
+                            { "_id": id, "_rev": rev },
+                            { 
+                              success: function(data){
+                                         l("deleted item with id=" + id + ", rev=" + rev);
+                                         that.notify({
+                                           "action": "Deleted",
+                                           "data": id
+                                         });
+                                       }
+                            }
+                            );
                       },
     setupLogin:       function(options){
                         options = options || {};

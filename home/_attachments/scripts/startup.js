@@ -22,7 +22,13 @@ $(document).ready(function(){
         "placeholder": "#itemList",
         "include_docs": true
       });
-
+  $("#itemList").click(function(e){
+    var td = $(e.target);
+    var tr = td.parent();
+    if (td.hasClass("itemDelete")){
+      $.ig.deleteItem(tr.attr("id"), tr.attr("rev"));
+    }
+  });
 
 
 
