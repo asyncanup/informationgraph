@@ -12,7 +12,8 @@
   //    and other options to pass on as is to db.view (like query parameters), success/error handlers
   // should not have a field called listener
   function l(val) { 
-    if ( window.console && debugMode) { console.log(val); }
+    if ( window.console && debugMode ) { console.log("ig: " + val); } 
+    // if it is desired to log objects, they must first be JSON.stringify'ed
   };
   function render(template, arrayData, placeholder){
     l("rendering in " + placeholder);
@@ -88,7 +89,7 @@
                           form.append($('<input type="text" id="newItemInput" value="new item value"/>'));
                           var inputElem = $("input:first", form);
                           //form.append($('<input type="submit" class="submit" value="Put"/>'));
-                          l("form set up in " + options.newItem);
+                          l(options.newItem + " form set up");
                           form.submit(function(e){
                             db.saveDoc({
                               "type":   "item",
@@ -109,7 +110,7 @@
                             });
                             return false;
                           });
-                          l("bound submit event handler to form with id: " + options.formId);
+                          l("bound submit event handler to form: " + form.selector);
                         } else if (options.itemFilter){
                           // TODO
                         }
@@ -126,7 +127,7 @@
                           // unless listener explicitly set to false
                           delete options["listener"];
                           delete options["placeholder"];
-                          l("registering listener for" + selector); 
+                          l("registering listener for " + selector); 
                           listeners[selector] = $.extend(options, {"view": view});
                           // since the key is options.placeholder, 
                           // previously set listeners can be changed by sending different view queries 
@@ -137,7 +138,7 @@
                         // now the remaining can be sent to db.view as is
                         db.view(view, $.extend(options, {
                           success: function(data){ 
-                                     l("view query returned successfully, updating " + options.placeholder);
+                                     l("view query returned successfully with " + data.total_rows + " rows");
                                      render(template, data.rows, selector);
                                    } 
                         }));
