@@ -56,9 +56,9 @@
                         function showNotification(text){
                           l("displaying notification bar");
                           $(nbSelector)
+                            .stop(true, true)
                             .text(content.action.toString() + ": '" + content.data.toString() + "'")
                              // use of toString() is contentious, think about it. remove?
-                            .stop(true, true)
                             .fadeIn("fast").delay(3000).fadeOut("slow");
                         }
                         if (content){
@@ -70,32 +70,36 @@
                       },
     refreshViewResults: function(){
                           var that = this;
-                          l("refreshing view results");
                           for (key in listeners){
-                            var opts = $.extend(
-                                { "listener": false, "placeholder": key},
-                                listeners[key]
-                                );
-                            var view = opts["view"];
-                            delete opts["view"];
-                            that.showViewResults(view, opts);
+                            if (listeners[key].setListener){
+                              // to not touch the placeholders that have been unregistered
+                              var options = $.extend(
+                                  { "placeholder": key },
+                                  listeners[key]
+                                  );
+                              that.showViewResults(options);
+                            }
                           }
                         },
+    getListeners:     function(){ return listeners; },
     setupForm:        function(options){
                         var that = this;
                         if (options.newItem){
-                          var form;
-                          form = $(options.newItem);
-                          form.append($('<input type="text" id="newItemInput" value="new item value"/>'));
-                          var inputElem = $("input:first", form);
+                          var form = $(options.newItem);
+                          form.append($('<input type="text" value="Add New Item"/>'));
+                          var inputElem = $("input:last", form);
                           //form.append($('<input type="submit" class="submit" value="Put"/>'));
                           l(options.newItem + " form set up");
+                          delete options["newItem"];
                           form.submit(function(e){
+                            l("submitting form " + form.selector); 
+                            // note that the selector may become outdated by the time the form 
+                            // is submitted, if there have been dom changes in the meantime
                             db.saveDoc({
                               "type":   "item",
                               // trim, remove repeated whitespace in value string
                               // this is a contentious issue, if this should be done or not
-                              "value":  inputElem.val().trim().replace(/\s+/g, ' '),
+                              "value":  shortenItem(inputElem.val(), { "onlyTrim": true }),
                               "created_at": (new Date()).getTime()
                             }, {
                               "success":  function(data){
@@ -111,34 +115,63 @@
                             return false;
                           });
                           l("bound submit event handler to form: " + form.selector);
-                        } else if (options.itemFilter){
-                          // TODO
+                        } else if (options.itemFilter && options.view){
+                          var form = $(options.itemFilter);
+                          form.append($('<input type="text" value="Search"/>'));
+                          var inputElem = $("input:last", form);
+                          //inputElem.hover(function(){ this.val(''); });
+                          l(options.itemFilter + " form set up");
+                          delete options["itemFilter"];
+                          form.submit(function(e){
+                            l("submitting form " + form.selector);
+                            var val = shortenItem(inputElem.val());
+                            if (val) {
+                              options["startkey"] = val;
+                              options["endkey"] = val + "\u9999"; // biggest UTF character starting with val
+                              that.showViewResults(options);
+                            } else {
+                              options["view"] = "home/allItems";
+                              options["startkey"] = '';
+                              options["endkey"] = '\u9999';
+                              that.showViewResults(options);
+                            }
+                            return false;
+                          });
+                          l("bound submit event handler to form: " + form.selector);
                         }
                         return this;
                       },
-    showViewResults:  function(view, options){
+    showViewResults:  function(options){
                         options = options || {};
                         options.placeholder = options.placeholder || "#itemList";
                         options.template = options.template || "#itemTemplate";
+                        options.view = options.view || "home/allItems";
                         var selector = options.placeholder;
                         var template = options.template;
-                        if (options.listener !== false){
-                          // to listen is the default. 
-                          // unless listener explicitly set to false
-                          delete options["listener"];
-                          delete options["placeholder"];
-                          l("registering listener for " + selector); 
-                          listeners[selector] = $.extend(options, {"view": view});
-                          // since the key is options.placeholder, 
-                          // previously set listeners can be changed by sending different view queries 
-                          // (with more specific options maybe?) with the same placeholder
+                        var view = options.view;
+                        delete options["placeholder"];
+
+                        if (typeof options.setListener !== 'undefined'){
+                          // a setListener directive has to be sent to register or 
+                          // unregister the placeholder from listeners
+                          // previously set listeners will be changed as per options received
+                          l("setting up listener for " + selector); 
+                          if (listeners[selector]){
+                            // options from earlier are preserved
+                            $.extend(listeners[selector], options);
+                          } else {
+                            listeners[selector] = options;
+                          }
                         }
-                        delete options["template"];
+                        var viewOpts = $.extend({}, options)
+                        delete viewOpts["template"];
+                        delete viewOpts["view"];
+                        delete viewOpts["setListener"];
                         // extraneous options deleted. 
                         // now the remaining can be sent to db.view as is
-                        db.view(view, $.extend(options, {
+                        db.view(view, $.extend(viewOpts, {
                           success: function(data){ 
-                                     l("view query returned successfully with " + data.total_rows + " rows");
+                                     l("view query returned successfully with " + data.rows.length + " rows");
                                      render(template, data.rows, selector);
                                    } 
                         }));

@@ -11,16 +11,18 @@ $(document).ready(function(){
       })
       .setupForm({
         "itemFilter": "#itemFilter",
-        "results":  {
-                      "placeholder": "#itemList",
-                      "template": "#itemTemplate"
-                    },
-        "viewQuery": "home/itemSuggestions"
+        "view": "home/itemSuggestions",
+        "placeholder": "#itemList",
+        "template": "#itemTemplate", // #itemSuggestionsTemplate ?
+        "include_docs": true,
+        "setListener": true
       })
-      .showViewResults("home/allItems", {
+      .showViewResults({
+        "view": "home/allItems", 
         "template": "#itemTemplate",
         "placeholder": "#itemList",
-        "include_docs": true
+        "include_docs": true,
+        "setListener": true
       });
   $("#itemList").click(function(e){
     var td = $(e.target);

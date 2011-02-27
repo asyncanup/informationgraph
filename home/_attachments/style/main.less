@@ -46,6 +46,19 @@
 
 @sidebar-width:     15%;
 
+.itemInput(@margin: 0) {
+  width:            99%;
+  background-color: lighten(@light-secondary-2, 3%);
+  border:           1px solid gray;
+  &:hover {
+    background-color: @light-secondary-2;
+  }
+  &:focus {
+    border:         1px solid black;
+  }
+}
+
+
 body {
   background-color: @light-primary-1;
   font-family:      Arial, Helvetica, Sans-Serif;
@@ -86,6 +99,12 @@ body {
   #sidebar {
     float:            left;
     width:            @sidebar-width;
+    #itemFilter {
+      input {
+        .itemInput;
+        margin-bottom: 5px;
+      }
+    }
     #itemList {
       width:            100%;
       .item {
@@ -110,17 +129,9 @@ body {
       }
     }
     #newItem {
-      #newItemInput {
-        width:            99%;
-        background-color: lighten(@light-secondary-2, 3%);
-        border:           1px solid gray;
-        margin-top:       2px;
-        &:hover {
-          background-color: @light-secondary-2;
-        }
-        &:focus {
-          border:         1px solid black;
-        }
+      input {
+        .itemInput;
+        margin-top: 2px;
       }
       
     }

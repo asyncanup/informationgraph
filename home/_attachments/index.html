@@ -30,7 +30,15 @@
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
     <tr id="${id}" rev="${doc._rev}" class="item">
-      <td class="itemValue">${key}</td>
+      <td class="itemValue">${doc.value}</td> 
+      <td class="itemDelete">x</td>
+    </tr>
+  </script>
+  <!--  itemValue above should be ${key} in case include_docs is not true, 
+        but then we can't use itemTemplate for itemSuggestions          -->
+  <script id="itemSuggestionsTemplate" type="text/x-jquery-tmpl">
+    <tr id="${id}" rev="${doc._rev}" class="item">
+      <td class="itemValue">${doc.value}</td>
       <td class="itemDelete">x</td>
     </tr>
   </script>
