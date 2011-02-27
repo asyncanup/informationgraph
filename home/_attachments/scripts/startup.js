@@ -24,13 +24,21 @@ $(document).ready(function(){
         "include_docs": true,
         "setListener": true
       });
-  $("#itemList").click(function(e){
-    var td = $(e.target);
-    var tr = td.parent();
-    if (td.hasClass("itemDelete")){
-      $.ig.deleteItem(tr.attr("id"), tr.attr("rev"));
-    }
-  });
+  $("#itemList")
+    .click(function(e){
+      var td = $(e.target);
+      var tr = td.parent();
+      if (td.hasClass("itemDelete")){
+        $.ig.deleteItem(tr.attr("id"), tr.attr("rev"));
+      }
+    })
+    .dblclick(function(e){
+      var td = $(e.target);
+      var tr = td.parent();
+      if (td.hasClass("itemValue")){
+        
+      }
+    })
 
 
 
