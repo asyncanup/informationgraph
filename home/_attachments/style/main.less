@@ -45,17 +45,12 @@
 @notification: #FFEEBB;
 
 @sidebar-width:     15%;
+@sidebar-main-gap:  2%;
 
-.itemInput(@margin: 0) {
-  width:            99%;
-  background-color: lighten(@light-secondary-2, 3%);
-  border:           1px solid gray;
-  &:hover {
-    background-color: @light-secondary-2;
-  }
-  &:focus {
-    border:         1px solid black;
-  }
+.border-radius(@radius: 3px){
+  border-radius:          @radius;
+  -moz-border-radius:     @radius;
+  -webkit-border-radius:  @radius;
 }
 
 
@@ -95,6 +90,27 @@ body {
     color:            darken(@dark-primary-1, 30%);
   }
 
+.itemInput(@border: 1px solid gray, @focus-border: 1px solid black) {
+  width:            99%;
+  background-color: lighten(@light-secondary-2, 3%);
+  border:           @border;
+  &:hover {
+    background-color: @light-secondary-2;
+  }
+  &:focus {
+    border:         @focus-border;
+  }
+}
+
+/* For .itemSelect and .itemDelete */
+.itemTdOption(){
+  cursor:           pointer;
+  padding:          0 2px;
+  width:            1.2em;
+  text-align:       center;
+  color:            @light-primary-2;
+}
+
 #content {
   #sidebar {
     float:            left;
@@ -106,25 +122,41 @@ body {
       }
     }
     #itemList {
-      width:            100%;
+      width:                100%;
       .item {
-        line-height:      1.6em;
+        line-height:        1.8em;
+        background-color:   @light-primary-2;
+        border:             1px solid @dark-primary-2;
+        &:hover {
+          background-color: darken(@light-primary-2, 5%);
+          .itemDelete {
+            color:            maroon;
+          }
+        }
         .itemValue {
-          background-color: @light-primary-2;
-          border:           1px dotted @dark-primary-2;
-          border-right:     0;
           cursor:           default;
           padding:          0 5px;
         }
+        .itemSelect {
+          .itemTdOption;
+          .subject {
+            color:          red;
+          }
+          .predicate {
+            color:          green;
+          }
+          .object {
+            color:          blue;
+          }
+        }
+        .itemEdit {
+          padding:          0 5px;
+          input {
+            .itemInput(0, 1px solid gray);
+          }
+        }
         .itemDelete {
-          background-color: @light-primary-2;
-          cursor:           pointer;
-          padding:          2px;
-          color:            maroon;
-          width:            1.2em;
-          text-align:       center;
-          border:           1px dotted @dark-primary-2;
-          border-left:      0;
+          .itemTdOption;
         }
       }
     }
@@ -133,12 +165,16 @@ body {
         .itemInput;
         margin-top: 2px;
       }
-      
     }
     #main {
-      
+      position:           relative;
+      top:                0;
+      left:               @sidebar-width + @sidebar-main-gap;
+      width:              100% - @sidebar-width - @sidebar-main-gap;
     }
   }
 }
 
-
+.spacer {
+  clear:                  both;
+}

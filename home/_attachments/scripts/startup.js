@@ -1,4 +1,5 @@
 $(document).ready(function(){
+
   $.ig.debug("start")
       .database("informationgraph")
       .notificationBar("#notification")
@@ -24,23 +25,39 @@ $(document).ready(function(){
         "include_docs": true,
         "setListener": true
       });
+
   $("#itemList")
     .click(function(e){
-      var td = $(e.target);
+      var td = itemTd($(e.target));
       var tr = td.parent();
-      if (td.hasClass("itemDelete")){
-        $.ig.deleteItem(tr.attr("id"), tr.attr("rev"));
-      }
+      if (td.hasClass("itemSelect")){
+        
+      } else if (td.hasClass("itemDelete")){
+        $.ig.deleteItem(toItem(tr));
+      } 
     })
     .dblclick(function(e){
-      var td = $(e.target);
+      var td = itemTd($(e.target));
       var tr = td.parent();
       if (td.hasClass("itemValue")){
-        
+        $.ig.editItem(toItem(tr));
       }
-    })
+    });
 
-
+  function itemTd(elem){
+    return elem.is('td') ? elem : elem.parents('td:first'); 
+    // assuming the nearest td is the child of the tr with class .item
+  }
+  function toItem(tr){
+    return {
+      "_id":    tr.attr("id"),
+      "_rev":   tr.attr("rev"),
+      "type":   "item",
+      "value":  tr.find(".itemValue").text() || tr.attr("originalValue"), 
+      // because itemEditTemplate doesn't have .itemValue td
+      "created_at": parseInt(tr.attr("created_at"))
+    };
+  }
 
 });
 

@@ -20,6 +20,9 @@
     $(placeholder).html("");
     $(template).tmpl(arrayData).appendTo(placeholder);
   }
+  function timestamp(){
+    return (new Date()).getTime();
+  }
 
   $.extend($.ig, {
     debug:            function(cmd){
@@ -62,8 +65,8 @@
                             .fadeIn("fast").delay(3000).fadeOut("slow");
                         }
                         if (content){
-                          if (content.action === "Created" || content.action === "Deleted"){
-                            showNotification(content);
+                          showNotification(content);
+                          if ($.inArray(content.action, ["Created", "Deleted", "Edited"])){
                             that.refreshViewResults();
                           }
                         }
@@ -86,9 +89,8 @@
                         var that = this;
                         if (options.newItem){
                           var form = $(options.newItem);
-                          form.append($('<input type="text" value="Add New Item"/>'));
+                          form.append($('<input type="text" title="Enter item value" value="Add New Item"/>'));
                           var inputElem = $("input:last", form);
-                          //form.append($('<input type="submit" class="submit" value="Put"/>'));
                           l(options.newItem + " form set up");
                           delete options["newItem"];
                           form.submit(function(e){
@@ -100,9 +102,9 @@
                               // trim, remove repeated whitespace in value string
                               // this is a contentious issue, if this should be done or not
                               "value":  shortenItem(inputElem.val(), { "onlyTrim": true }),
-                              "created_at": (new Date()).getTime()
+                              "created_at": timestamp()
                             }, {
-                              "success":  function(data){
+                              success:  function(data){
                                 l("saved document, notifying app");
                                 // now refresh the relevant view results
                                 that.notify({
@@ -117,7 +119,7 @@
                           l("bound submit event handler to form: " + form.selector);
                         } else if (options.itemFilter && options.view){
                           var form = $(options.itemFilter);
-                          form.append($('<input type="text" value="Search"/>'));
+                          form.append($('<input type="text" title="Filter items" value="Search"/>'));
                           var inputElem = $("input:last", form);
                           //inputElem.hover(function(){ this.val(''); });
                           l(options.itemFilter + " form set up");
@@ -172,26 +174,67 @@
                         db.view(view, $.extend(viewOpts, {
                           success: function(data){ 
                                      l("view query returned successfully with " + data.rows.length + " rows");
-                                     render(template, data.rows, selector);
+                                     var docs = data.rows.map(function(row){ return row.doc; });
+                                     render(template, docs, selector);
                                    } 
                         }));
                         return this;
                       },
-    deleteItem:       function(id, rev, options){
+    deleteItem:       function(doc, options){
                         var that = this;
-                        l("deleting item - (" + id + ", " + rev + ")");
+                        options = options || {};
+                        bishdoc = doc;
+                        l("deleting item '" + doc.value + "'");
                         db.removeDoc(
-                            { "_id": id, "_rev": rev },
-                            { 
+                            doc,
+                            $.extend({ 
                               success: function(data){
                                          l("deleted item");
                                          that.notify({
                                            "action": "Deleted",
-                                           "data": id
+                                           "data": doc.value
                                          });
                                        }
-                            }
-                            );
+                            }, options)
+                        );
+                      },
+    editItem:         function(doc, options){
+                        var that = this;
+                        options = options || {};
+                        var template = options.template || "#itemEditTemplate";
+                        l("editing item '" + doc.value + "'");
+                        $("#" + doc._id).replaceWith($(template).tmpl(doc));
+                        var tr = $("#" + doc._id); // you have to assign the variable after replaceWith
+                        var form = tr.find("form:first");
+                        var inputElem = form.find("input:last");  
+                        inputElem.focus();
+                        form.submit(function(e){
+                          var val = shortenItem(inputElem.val(), { "onlyTrim": true });
+                          l("saving item '" + doc.value + "' with new value '" + val + "'");
+                          db.saveDoc({
+                            "_id":    doc._id,
+                            "_rev":   doc._rev,
+                            "type":   doc.type,
+                            "value":  val,
+                            "created_at": doc.created_at,
+                            "updated_at": timestamp()
+                          }, 
+                          $.extend({
+                            success:  function(data){
+                                        l("saved edited document, notifying app");
+                                        // now refresh the relevant view results
+                                        that.notify({
+                                          "action": "Edited",
+                                          "data": val
+                                        });
+                                        doc.value = val;
+                                        tr.replaceWith($("#itemTemplate").tmpl(doc)); 
+                                        // how about not assuming #itemTemplate?
+                                      }
+                          }, options)
+                          );
+                          return false;
+                        });
                       },
     setupLogin:       function(options){
                         options = options || {};
