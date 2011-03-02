@@ -66,13 +66,16 @@
                         }
                         if (content){
                           showNotification(content);
-                          if ($.inArray(content.action, ["Created", "Deleted", "Edited"])){
+                          l(content.action);
+                          if ($.inArray(content.action, ["Created", "Deleted", "Edited"]) > -1){
                             that.refreshViewResults();
                           }
                         }
                       },
     refreshViewResults: function(){
                           var that = this;
+                          l("refreshing view results");
+
                           for (key in listeners){
                             if (listeners[key].setListener){
                               // to not touch the placeholders that have been unregistered
@@ -144,6 +147,7 @@
                         return this;
                       },
     showViewResults:  function(options){
+                        l("showing view results"); 
                         options = options || {};
                         options.placeholder = options.placeholder || "#itemList";
                         options.template = options.template || "#itemTemplate";
