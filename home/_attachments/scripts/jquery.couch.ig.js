@@ -4,6 +4,7 @@
   var db = "informationgraph";
   var nbSelector = "#notification"; // ui notification bar jquery selector
   var debugMode = true; // whether debug mode is on
+  var selectedItems = [];
   var listeners = {};
   // listenes has jquery dom selectors as keys and options hashes as values
   // options have these fields:
@@ -67,7 +68,8 @@
                         if (content){
                           showNotification(content);
                           l(content.action);
-                          if ($.inArray(content.action, ["Created", "Deleted", "Edited"]) > -1){
+                          if ($.inArray(content.action, 
+                                ["Created", "Deleted", "Edited"]) !=== -1){
                             that.refreshViewResults();
                           }
                         }
@@ -240,6 +242,21 @@
                           return false;
                         });
                       },
+    selectItem:       function(doc){
+                        var that = this;
+                        // checking only for _id
+                        selectedItems.forEach(function(item){
+                          if (!doc._id || item._id === doc._id){
+                            return false;
+                          }
+                        });
+                        selectedItems.push(doc);
+                        // make the ui changes for selection
+                        if (selectedItems.length >= 3){
+                          // TODO remove the selection in ui and add relation to db
+                          selectedItems = [];
+                        }
+                      };
     setupLogin:       function(options){
                         options = options || {};
 

@@ -31,7 +31,7 @@ $(document).ready(function(){
       var td = itemTd($(e.target));
       var tr = td.parent();
       if (td.hasClass("itemSelect")){
-        
+        $.ig.selectItem(toItem(tr));
       } else if (td.hasClass("itemDelete")){
         $.ig.deleteItem(toItem(tr));
       } 
