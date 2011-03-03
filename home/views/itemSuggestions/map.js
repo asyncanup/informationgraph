@@ -6,7 +6,7 @@ function(doc){
     var str = shortenItem(doc.value);
 
     // emit keys
-    for (i = 0; i < (str.length - 2); i += 1){
+    for (i = 0; i < str.length - 1; i += 1){
       emit(str.slice(i), null);
     }
 

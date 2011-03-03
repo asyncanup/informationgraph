@@ -42,13 +42,21 @@
   <script id="itemEditTemplate" type="text/x-jquery-tmpl">
     <tr id="${_id}" rev="${_rev}" created_at="${created_at}" originalValue="${value}" class="item">
       <td class="itemEdit">
+        <form class="itemEditForm">
+          <input class="itemInput" title="Enter new value" value="${value}"/>
+        </form>
+      </td>
+      <td class="itemDelete" title="Delete Item">x</td>
+    </tr>
+  </script>
+  <script id="relationTemplate" type="text/x-jquery-tmpl">
+    <tr id="${_id}" rev="${_rev}" created_at="${created_at}" class="relation">
+      <td class="subject">
         <form><input class="itemInput" title="Enter new value" value="${value}"/></form>
       </td>
       <td class="itemDelete" title="Delete Item">x</td>
     </tr>
   </script>
-  <!--  itemValue above should be ${key} in case include_docs is not true, 
-        but then we can't use itemTemplate for itemSuggestions          -->
   <script src="scripts/jquery.js"></script>
   <script src="scripts/jquery.couch.js"></script>
   <script src="scripts/jquery.couch.ig.js"></script>

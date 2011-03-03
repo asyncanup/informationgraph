@@ -2,7 +2,15 @@ $(document).ready(function(){
 
   $.ig.debug("start")
       .database("informationgraph")
-      .notificationBar("#notification")
+      .notification(function(text){
+        $("#notification")
+          .stop(true, true)
+          .text(text)
+          .fadeIn("fast").delay(3000).fadeOut("slow");
+      })
+      // TODO: setupLogin, setupForm and showViewResults to be changed
+      // $.ig should have no knowledge or assumptions about GUI
+      // and edit the templates
       .setupLogin({ 
         "loginData": getLoginData(),
         "loginButton": "#loginButton"
@@ -27,27 +35,57 @@ $(document).ready(function(){
       });
 
   $("#itemList")
-    .click(function(e){
-      var td = itemTd($(e.target));
-      var tr = td.parent();
-      if (td.hasClass("itemSelect")){
-        $.ig.selectItem(toItem(tr));
-      } else if (td.hasClass("itemDelete")){
-        $.ig.deleteItem(toItem(tr));
-      } 
-    })
-    .dblclick(function(e){
-      var td = itemTd($(e.target));
-      var tr = td.parent();
-      if (td.hasClass("itemValue")){
-        $.ig.editItem(toItem(tr));
-      }
-    });
+    // sends the data used to render the template earlier, 
+    // which is basically the item doc
+    .delegate(".itemSelect", "click", function(){
+      var tmplItem = $.tmplItem(this);
+      var doc = $.extend({}, tmplItem.data);
+      var tr = $(tmplItem.nodes);
 
-  function itemTd(elem){
-    return elem.is('td') ? elem : elem.parents('td:first'); 
-    // assuming the nearest td is the child of the tr with class .item
-  }
+      var selectText = ["-", "s", "p", "o"];
+
+      // sending in a callback function to toggle gui of a selected or unselected item
+      $.ig.selectItem(doc, function(index){ 
+        if (tr.hasClass("selected")){
+          tr.removeClass("selected")
+            .find(".itemSelect")
+            .text(selectText[index]);
+        } else {
+          tr.addClass("selected")
+            .find(".itemSelect")
+            .text(selectText[index]);
+        }
+      });
+    })
+    .delegate(".itemDelete", "click", function(){
+      var doc = $.extend({}, $.tmplItem(this).data);
+      $.ig.deleteItem(doc);
+    })
+    .delegate(".itemValue", "dblclick", function(){
+      var tmplItem = $.tmplItem(this);
+      tmplItem.tmpl = $("#itemEditTemplate").template();
+      tmplItem.update();
+      $(tmplItem.nodes).find("input").focus();
+      // can i safely use tmplItem.nodes?
+    })
+    .delegate(".itemEditForm", "submit", function(){
+      var input = $(this).find("input.itemInput");
+      var val = shortenItem(input.val(), { "onlyTrim": true });
+      var tmplItem = $.tmplItem(this);
+      var doc = $.extend({}, tmplItem.data);
+
+      if (doc.value === val){
+        // no changes
+        tmplItem.tmpl = $("#itemTemplate").template();
+        tmplItem.update();
+        return false;
+      }
+
+      doc.value = val;
+      $.ig.editItem(doc);
+      return false;
+    });
+      
   function toItem(tr){
     return {
       "_id":    tr.attr("id"),

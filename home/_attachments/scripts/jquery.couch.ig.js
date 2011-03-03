@@ -1,11 +1,11 @@
 (function($) {
   $.ig = $.ig || {};
 
-  var db = "informationgraph";
-  var nbSelector = "#notification"; // ui notification bar jquery selector
+  var db;
   var debugMode = true; // whether debug mode is on
   var selectedItems = [];
   var listeners = {};
+  var notifyUI = function(){};
   // listenes has jquery dom selectors as keys and options hashes as values
   // options have these fields:
   //    view - what view to query. passed as is to db.view
@@ -45,29 +45,23 @@
                           return db; 
                         }
                       },
-    notificationBar:  function(nb){
-                        if (nb) { 
-                          nbSelector = nb; 
-                          l(nbSelector + " set as notification bar");
-                          return this; 
-                        }
-                        else { return nbSelector || "#notification"; }
+    notification:     function(func){ // callback function
+                        notifyUI = func;
+                        return this;
                       },
     notify:           function(content){
                         // at every trigger of this function,
                         // all registered view query listeners will be fired and refreshed
                         var that = this;
-                        function showNotification(text){
-                          l("displaying notification bar");
-                          $(nbSelector)
-                            .stop(true, true)
-                            .text(content.action.toString() + ": '" + content.data.toString() + "'")
-                             // use of toString() is contentious, think about it. remove?
-                            .fadeIn("fast").delay(3000).fadeOut("slow");
-                        }
                         if (content){
-                          showNotification(content);
-                          l(content.action);
+                          l("triggering GUI notification");
+                          var text =  content.action.toString() 
+                                      + ": '" 
+                                      + content.data.toString() 
+                                      + "'";
+                          l(text);
+                          notifyUI(text);
+                             // use of toString() is contentious, think about it. remove?
                           if ($.inArray(content.action, 
                                 ["Created", "Deleted", "Edited"]) !== -1){
                             that.refreshViewResults();
@@ -207,69 +201,32 @@
     editItem:         function(doc, options){
                         var that = this;
                         options = options || {};
-                        var template = options.template || "#itemEditTemplate";
-                        l("editing item '" + doc.value + "'");
-                        $("#" + doc._id).replaceWith($(template).tmpl(doc));
-                        var tr = $("#" + doc._id); // you have to assign the variable after replaceWith
-                        var form = tr.find("form:first");
-                        var inputElem = form.find("input:last");  
-                        inputElem.focus();
-                        form.submit(function(e){
-                          function render(){
-                            // how about not assuming #itemTemplate?
-                            tr.replaceWith($("#itemTemplate").tmpl(doc));
-                          }
-                          var val = shortenItem(inputElem.val(), { "onlyTrim": true });
-                          if (doc.value === val){
-                            l("no changes");
-                            render();
-                            return false;
-                          }
-                          l("saving item '" + doc.value + "' with new value '" + val + "'");
-                          doc.value = val;
-                          doc.updated_at = timestamp();
-                          db.saveDoc(doc, 
-                          $.extend({
-                            success:  function(data){
-                                        l("saved edited document, notifying app");
-                                        // now refresh the relevant view results
-                                        that.notify({
-                                          "action": "Edited",
-                                          "data": val
-                                        });
-                                        render();
-                                      }
-                          }, options)
-                          );
-                          return false;
-                        });
+
+                        doc.updated_at = timestamp();
+                        l("saving item with new value '" + doc.value + "'");
+                        db.saveDoc(doc, 
+                            $.extend({
+                              success:  function(data){
+                                          l("saved edited document, notifying app");
+                                          // now refresh the relevant view results
+                                          that.notify({
+                                            "action": "Edited",
+                                            "data": doc.value
+                                          });
+                                        }
+                            }, options) );
                       },
-    selectItem:       function(doc){
+    selectItem:       function(doc, toggleGui, options){
                         var that = this;
-                        var selectText = ["s", "p", "o"];
-                        function toggleGui(item_id){
-                          var tr = $("#" + item_id);
-                          if (tr.hasClass("selected")){
-                            tr.removeClass("selected")
-                              .find(".itemSelect")
-                              .text("-");
-                              // really silly debugging session because i typed 
-                              // .selectItem instead of .itemSelect
-                              // it's stupid being a human
-                          } else {
-                            tr.addClass("selected")
-                            .find(".itemSelect")
-                            .text(selectText[selectedItems.length - 1]);
-                          }
-                        }
                         function select(){
                           l("selecting item '" + doc.value + "'");
                           selectedItems.push(doc);
-                          toggleGui(doc._id);
+                          toggleGui(selectedItems.length);
                         }
                         function unselect(){
                           l("unselecting '" + doc.value + "'");
-                          toggleGui(selectedItems.pop()._id);
+                          selectedItems.pop();
+                          toggleGui(selectedItems.length);
                         }
                         if (doc._id && selectedItems.length !== 0){
                           if (doc._id === selectedItems[selectedItems.length - 1]._id){
@@ -301,21 +258,18 @@
                             "predicate":  selectedItems[1]._id,
                             "object":     selectedItems[2]._id,
                             "created_at": timestamp()
-                          }, {
+                          }, $.extend({
                             success: function(d){
                                        var relationText = selectedItems.map(function(item){ 
                                            return item.value; 
                                        }).join(" - ");
+                                       selectedItems = [];
                                        that.notify({
                                          "action": "Created",
                                          "data": relationText
                                        });
-                                       selectedItems.forEach(function(item){
-                                         toggleGui(item._id);
-                                       });
-                                       selectedItems = [];
                                      }
-                          });
+                          }, options));
                         }
                       },
     setupLogin:       function(options){
