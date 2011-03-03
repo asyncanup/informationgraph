@@ -245,7 +245,6 @@
                         });
                       },
     selectItem:       function(doc){
-                        //TODO: previously selected items are being selected
                         var that = this;
                         var selectText = ["s", "p", "o"];
                         function toggleGui(item_id){
