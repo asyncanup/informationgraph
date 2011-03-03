@@ -69,7 +69,7 @@
                           showNotification(content);
                           l(content.action);
                           if ($.inArray(content.action, 
-                                ["Created", "Deleted", "Edited"]) !=== -1){
+                                ["Created", "Deleted", "Edited"]) !== -1){
                             that.refreshViewResults();
                           }
                         }
@@ -243,20 +243,65 @@
                         });
                       },
     selectItem:       function(doc){
+                        //TODO: text not reverting to "-" on unselecting
+                        //      previously selected are being selected
                         var that = this;
-                        // checking only for _id
-                        selectedItems.forEach(function(item){
-                          if (!doc._id || item._id === doc._id){
+                        var selectText = ["s", "p", "o"];
+                        l("selecting item '" + doc.value + "'");
+                        if (doc._id && selectedItems.length !== 0){
+                          // checking only for _id
+                          if (doc._id === selectedItems[selectedItems.length - 1]._id){
+                            l("item unselected");
+                            $("#" + selectedItems.pop()._id)
+                              .removeClass("selected") 
+                              .find(".selectItem")
+                              .text("-");
                             return false;
+                          } else {
+                            // checking if the received item is not already selected
+                            // (except for the case when it was the last seleted item, handled above)
+                            selectedItems.forEach(function(item){
+                              if (item._id === doc._id){
+                                l("item already selected");
+                                return false;
+                              }
+                            });
                           }
-                        });
+                        }
                         selectedItems.push(doc);
                         // make the ui changes for selection
+                        $("#" + doc._id)
+                          .addClass("selected")
+                          .find(".itemSelect")
+                          .text(selectText[selectedItems.length - 1]);
                         if (selectedItems.length >= 3){
-                          // TODO remove the selection in ui and add relation to db
-                          selectedItems = [];
+                          l("subject, predicate and object selected, making relation");
+                          db.saveDoc({
+                            "type":       "relation",
+                            "subject":    selectedItems[0]._id,
+                            "predicate":  selectedItems[1]._id,
+                            "object":     selectedItems[2]._id,
+                            "created_at": timestamp()
+                          }, {
+                            success: function(d){
+                                       var relationText = selectedItems.map(function(item){ 
+                                           return item.value; 
+                                       }).join(" - ");
+                                       that.notify({
+                                         "action": "Created",
+                                         "data": relationText
+                                       });
+                                       selectedItems.forEach(function(item){
+                                         $("#" + item._id)
+                                         .removeClass("selected")
+                                         .find(".itemSelect")
+                                         .text("-");
+                                       });
+                                       selectedItems = [];
+                                     }
+                          });
                         }
-                      };
+                      },
     setupLogin:       function(options){
                         options = options || {};
 
