@@ -215,16 +215,20 @@
                         var inputElem = form.find("input:last");  
                         inputElem.focus();
                         form.submit(function(e){
+                          function render(){
+                            // how about not assuming #itemTemplate?
+                            tr.replaceWith($("#itemTemplate").tmpl(doc));
+                          }
                           var val = shortenItem(inputElem.val(), { "onlyTrim": true });
+                          if (doc.value === val){
+                            l("no changes");
+                            render();
+                            return false;
+                          }
                           l("saving item '" + doc.value + "' with new value '" + val + "'");
-                          db.saveDoc({
-                            "_id":    doc._id,
-                            "_rev":   doc._rev,
-                            "type":   doc.type,
-                            "value":  val,
-                            "created_at": doc.created_at,
-                            "updated_at": timestamp()
-                          }, 
+                          doc.value = val;
+                          doc.updated_at = timestamp();
+                          db.saveDoc(doc, 
                           $.extend({
                             success:  function(data){
                                         l("saved edited document, notifying app");
@@ -233,9 +237,7 @@
                                           "action": "Edited",
                                           "data": val
                                         });
-                                        doc.value = val;
-                                        tr.replaceWith($("#itemTemplate").tmpl(doc)); 
-                                        // how about not assuming #itemTemplate?
+                                        render();
                                       }
                           }, options)
                           );
@@ -243,37 +245,55 @@
                         });
                       },
     selectItem:       function(doc){
-                        //TODO: text not reverting to "-" on unselecting
-                        //      previously selected are being selected
+                        //TODO: previously selected items are being selected
                         var that = this;
                         var selectText = ["s", "p", "o"];
-                        l("selecting item '" + doc.value + "'");
-                        if (doc._id && selectedItems.length !== 0){
-                          // checking only for _id
-                          if (doc._id === selectedItems[selectedItems.length - 1]._id){
-                            l("item unselected");
-                            $("#" + selectedItems.pop()._id)
-                              .removeClass("selected") 
-                              .find(".selectItem")
+                        function toggleGui(item_id){
+                          var tr = $("#" + item_id);
+                          if (tr.hasClass("selected")){
+                            tr.removeClass("selected")
+                              .find(".itemSelect")
                               .text("-");
+                              // really silly debugging session because i typed 
+                              // .selectItem instead of .itemSelect
+                              // it's stupid being a human
+                          } else {
+                            tr.addClass("selected")
+                            .find(".itemSelect")
+                            .text(selectText[selectedItems.length - 1]);
+                          }
+                        }
+                        function select(){
+                          l("selecting item '" + doc.value + "'");
+                          selectedItems.push(doc);
+                          toggleGui(doc._id);
+                        }
+                        function unselect(){
+                          l("unselecting '" + doc.value + "'");
+                          toggleGui(selectedItems.pop()._id);
+                        }
+                        if (doc._id && selectedItems.length !== 0){
+                          if (doc._id === selectedItems[selectedItems.length - 1]._id){
+                            // note: checking only for _id. good with it?
+                            unselect();
                             return false;
                           } else {
                             // checking if the received item is not already selected
-                            // (except for the case when it was the last seleted item, handled above)
+                            // (except for the case when it was the last seleted item,
+                            // which has been handled above)
+                            var flag = false;
                             selectedItems.forEach(function(item){
                               if (item._id === doc._id){
                                 l("item already selected");
-                                return false;
+                                flag = true;
+                                // returning here just returns from this 
+                                // immediate function, so moved down
                               }
                             });
+                            if (flag) { return false; }
                           }
                         }
-                        selectedItems.push(doc);
-                        // make the ui changes for selection
-                        $("#" + doc._id)
-                          .addClass("selected")
-                          .find(".itemSelect")
-                          .text(selectText[selectedItems.length - 1]);
+                        select();
                         if (selectedItems.length >= 3){
                           l("subject, predicate and object selected, making relation");
                           db.saveDoc({
@@ -292,10 +312,7 @@
                                          "data": relationText
                                        });
                                        selectedItems.forEach(function(item){
-                                         $("#" + item._id)
-                                         .removeClass("selected")
-                                         .find(".itemSelect")
-                                         .text("-");
+                                         toggleGui(item._id);
                                        });
                                        selectedItems = [];
                                      }
