@@ -1,0 +1,280 @@
+/* CouchOne Styles  */
+
+/* reset.css */
+html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, code, del, dfn, em, img, q, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, dialog, figure, footer, header, hgroup, nav, section {margin:0;padding:0;border:0;font-weight:inherit;font-style:inherit;font-size:100%;font-family:inherit;vertical-align:baseline;}
+article, aside, dialog, figure, footer, header, hgroup, nav, section {display:block;}
+body {line-height:1.5;}
+table {border-collapse:separate;border-spacing:0;}
+caption, th, td {text-align:auto;font-weight:normal;}
+table, td, th {vertical-align:middle;}
+blockquote:before, blockquote:after, q:before, q:after {content:"";}
+blockquote, q {quotes:"" "";}
+a img {border:none;}
+
+/* typography.css */
+
+body {
+  font-family: Baskerville, "Baskerville old face", "Hoefler Text", Garamond, "Times New Roman", serif;
+}
+
+h1,
+h2, 
+h3 {
+  font-family: ChunkFive, "chunk-1", "chunk-2", Baskerville, "Baskerville old face", "Hoefler Text", Garamond, "Times New Roman", serif;
+}
+
+html {font-size:100.01%;}
+body {font-size:100%;}
+h1, h2, h3, h4, h5, h6 {font-weight:normal;}
+h1 {font-size: 3em;line-height: 1;margin-bottom: 0.5em;}
+h2 {font-size:2em;margin-bottom:0.75em;}
+h3 {font-size:1.5em;line-height:1;margin-bottom:1em;}
+h4 {font-size:1.2em;line-height:1.25;margin-bottom:1.25em;}
+h5 {font-size:1em;font-weight:bold;margin-bottom:1.5em;}
+h6 {font-size:1em;font-weight:bold;}
+h1 img, h2 img, h3 img, h4 img, h5 img, h6 img {margin:0;}
+p {margin:0 0 1.5em;}
+p img.left {float:left;margin:1.5em 1.5em 1.5em 0;padding:0;}
+p img.right {float:right;margin:1.5em 0 1.5em 1.5em;}
+blockquote {margin:1.5em; font-style:italic;}
+strong {font-weight:bold;}
+em, dfn {font-style:italic;}
+dfn {font-weight:bold;}
+sup, sub {line-height:0;}
+abbr, acronym {border-bottom:1px dotted #666;}
+address {margin:0 0 1.5em;font-style:italic;}
+del {color:#666;}
+pre {margin:1.5em 0;white-space:pre;}
+pre, code, tt {font:1em 'andale mono', 'lucida console', monospace;line-height:1.5;}
+li ul, li ol {margin:0;}
+ul, ol {margin:0 1.5em 1.5em 0;padding-left:3.333em;}
+ul {list-style-type:disc;}
+ol {list-style-type:decimal;}
+dl {margin:0 0 1.5em 0;}
+dl dt {font-weight:bold;}
+dd {margin-left:1.5em;}
+
+/* tables */
+table {
+  margin-bottom: 1.4em;
+  width: 100%;  
+}
+
+.appendix table,
+.chapter table,
+.book table {
+  padding: 1.5em;
+  background: #FFF;
+  border: 1px dotted #101937;
+}
+th {font-weight:bold;}
+
+.appendix table th,
+.appendix table td,
+.chapter table th, 
+.chapter table td,
+.book table th, 
+.book table td {
+  border-bottom: 1px dotted #C59F74;
+}
+thead th {background: transparent;}
+th, td, caption {padding:4px 10px 4px 5px;}
+tr.even td {background:#e5ecf9;}
+tfoot {font-style:italic;}
+caption {background:#eee;}
+
+/* Couch Documentation Stylesheet */
+
+pre code, code.literal {
+  font-family: 'andale mono', 'lucida console', monospace;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+}
+
+div.table table thead tr th,
+div.table table tbody tr td,
+div.informaltable table thead tr th,
+div.informaltable table tbody tr td {
+  padding-right: 15px;
+}
+
+col.item-0, col.item-1, col.item-2, col.item-3, col.item-4,
+col.item-5, col.item-6, col.item-7, col.item-8, col.item-9,
+col.lastitem {
+  width: 75x;
+}
+
+col.desc {
+  width: 400px;
+}
+
+div.table table thead tr th {
+  text-align: left;
+}
+
+
+
+
+/* grid.css */
+/* layout */
+
+/*
+container = 984px = 61.5em
+grid unit = 60 px = 3.75em
+gutter = 24px = 1.5em
+2cols = 144px = 4.6341%
+6cols = 480px = 48.7805%
+4cols = 312px = 31.7073%
+3cols = 228px = 23.1707%
+8cols = 648px
+10cols = 720px = 73.17073%
+
+*/
+
+.book,
+.navheader,
+.chapter,
+.appendix,
+.navfooter table, 
+.container {
+  margin: 0 auto;
+  width: 960px;
+  max-width: 960px;
+  min-width: 360px;
+  overflow: hidden;
+  clear: both;
+}
+.clearfix:after, .container:after {content:"\0020";display:block;height:0;clear:both;visibility:hidden;overflow:hidden;}
+.clearfix, .container {display:block;}
+.clear {clear:both;}
+
+.span2, .span3, .span4, .span6, .span8, .span10 {
+  margin-right: 2.439%;
+  float: left;
+} 
+
+.span2 {
+  width: 14.6341%;
+}
+.span3 {
+  width: 23.1707%;
+}
+.span4 {
+  width: 31.7073%;
+}
+.span6 {
+  width: 48.7805%;
+}
+.span8 {
+  width: 65.853658%;
+}
+.span10 {
+  width: 73.17073%;
+}
+.last {
+  margin-right: 0 !important;
+}
+
+
+
+
+/* colors */
+/*
+#EC4800   orange
+#101937   blueish black
+#F2F5F1   off white / beige background
+#C59F74   brown
+#753E18   darker brown
+
+*/
+
+body {
+color: #101937;
+background: #F2F5F1 url(http://www.couchone.com/img/couchone_bg.png) repeat 0 50%;
+}
+
+.footer,
+.footer .container {
+background: #101937;
+color: #F2F5F1;
+}
+
+/* links */
+a, 
+a:link, 
+a:visited {
+color: #EC4800;
+text-decoration: underline;
+}
+
+a:hover, 
+a:active, 
+a:focus {
+color: #FE7C00;
+text-decoration: underline;
+outline: none;
+}
+
+.list-of-tables a, 
+.list-of-tables a:link, 
+.list-of-tables a:visited,
+.toc a, 
+.toc a:link, 
+.toc a:visited {
+  color: #101937;
+  text-decoration: none;
+  border-bottom: 1px dotted #C59F74;
+}
+
+.list-of-tables a:hover, 
+.list-of-tables a:active, 
+.list-of-tables a:focus,
+.toc a:hover, 
+.toc a:active, 
+.toc a:focus {
+  color: #EC4800;
+  text-decoration: none;
+  border-bottom: 1px dotted #101937;
+}
+
+
+/* code blocks */
+
+pre {
+  background: #101937;
+  color: #FFF;
+  margin-bottom: 1.5em;
+  overflow-x: auto;
+  padding: 1em;
+}
+
+code {
+  font-size: 0.8888em;
+}
+
+
+hr {
+  height: 1px;
+  background: #C59F74;
+  color: #C59F74;
+  border: none;
+}
+
+
+.book,
+.chapter,
+.appendix {
+  margin-top: 1.5em;
+}
+
+/* CouchOne Link */
+
+div.couchone-link {
+  text-align: center;
+}
+
+.navheader th, 
+.navheader td {
+  text-align: auto;
+}
