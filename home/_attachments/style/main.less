@@ -59,6 +59,7 @@ body {
     left:             40%;
     padding:          3px 6px;
     color:            darken(@dark-primary-1, 30%);
+    margin:           auto;
   }
 
 
@@ -106,6 +107,52 @@ body {
   padding:          0 @itemMain-padding;
 }
 
+.item {
+  line-height:        @item-line-height;
+  background-color:   @light-primary-2;
+  border:             1px solid @dark-primary-2;
+  &:hover {
+    background-color: darken(@light-primary-2, 5%);
+    .itemDelete {
+      color:          maroon;
+    }
+  }
+  .itemValue {
+    .itemMain;
+    cursor:           default;
+  }
+  .itemSelect {
+    .itemOption;
+  }
+  .itemEdit {
+    margin-right:     @itemOption-total-width;
+    .itemEditForm {
+      input {
+        .itemInput(0, 0);
+        .itemMain;
+        height:             @item-line-height - 1;
+        margin-right:       0;
+        background-color:   white;
+        &:hover {
+          background-color: white;
+        }
+      }
+    }
+  }
+  .itemDelete {
+    .itemOption;
+  }
+}
+.selected {
+  background-color:   @secondary;
+  &:hover {
+    background-color: @secondary;
+  }
+  .itemSelect {
+    color:            maroon;
+  }
+}
+
 #content {
   #sidebar {
     float:                  left;
@@ -118,51 +165,6 @@ body {
       }
     }
     #itemList {
-      .item {
-        line-height:        @item-line-height;
-        background-color:   @light-primary-2;
-        border:             1px solid @dark-primary-2;
-        &:hover {
-          background-color: darken(@light-primary-2, 5%);
-          .itemDelete {
-            color:          maroon;
-          }
-        }
-        .itemValue {
-          .itemMain;
-          cursor:           default;
-        }
-        .itemSelect {
-          .itemOption;
-        }
-        .itemEdit {
-          margin-right:     @itemOption-total-width;
-          .itemEditForm {
-            input {
-              .itemInput(0, 0);
-              .itemMain;
-              height:             @item-line-height - 1;
-              margin-right:       0;
-              background-color:   white;
-              &:hover {
-                background-color: white;
-              }
-            }
-          }
-        }
-        .itemDelete {
-          .itemOption;
-        }
-      }
-      .selected {
-        background-color:   @secondary;
-        &:hover {
-          background-color: @secondary;
-        }
-        .itemSelect {
-          color:            maroon;
-        }
-      }
     }
     #newItem {
       input {
@@ -174,12 +176,12 @@ body {
     }
   }
   #main {
-    position:           relative;
-    top:                0;
-    margin-left:               @sidebar-width + @sidebar-main-gap;
+    position:               relative;
+    top:                    0;
+    margin-left:            @sidebar-width + @sidebar-main-gap;
   }
 }
 
 .spacer {
-  clear:                  both;
+  clear:                    both;
 }
