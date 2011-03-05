@@ -15,7 +15,7 @@
   function l(val) { 
     if ( window.console && debugMode ) { console.log("ig: " + val); } 
     // if it is desired to log objects, they must first be JSON.stringify'ed
-  };
+  }
   function render(template, arrayData, placeholder){
     l("rendering in " + placeholder);
     $(placeholder).html("");
@@ -55,10 +55,10 @@
                         var that = this;
                         if (content){
                           l("triggering GUI notification");
-                          var text =  content.action.toString() 
-                                      + ": '" 
-                                      + content.data.toString() 
-                                      + "'";
+                          var text =  content.action.toString() +
+                                      ": '" +
+                                      content.data.toString() +
+                                      "'";
                           l(text);
                           notifyUI(text);
                              // use of toString() is contentious, think about it. remove?
@@ -73,26 +73,28 @@
                           l("refreshing view results");
 
                           selectedItems = [];
-                          for (key in listeners){
-                            if (listeners[key].setListener){
+                          for (var selector in listeners){
+                            if (listeners[selector].setListener){
                               // to not touch the placeholders that have been unregistered
                               var options = $.extend(
-                                  { "placeholder": key },
-                                  listeners[key]
+                                  { "placeholder": selector },
+                                  listeners[selector]
                                   );
                               that.showViewResults(options);
                             }
                           }
                         },
     getListeners:     function(){ return listeners; },
+    clearListeners:   function(){ l("cleared all listeners!"); listeners = {}; },
     setupForm:        function(options){
                         var that = this;
+                        var form, inputElem;
                         if (options.newItem){
-                          var form = $(options.newItem);
+                          form = $(options.newItem);
                           form.append($('<input type="text" title="Enter item value" value="Add New Item"/>'));
-                          var inputElem = $("input:last", form);
+                          inputElem = $("input:last", form);
                           l(options.newItem + " form set up");
-                          delete options["newItem"];
+                          delete options.newItem;
                           form.submit(function(e){
                             l("submitting form " + form.selector); 
                             // note that the selector may become outdated by the time the form 
@@ -118,23 +120,23 @@
                           });
                           l("bound submit event handler to form: " + form.selector);
                         } else if (options.itemFilter && options.view){
-                          var form = $(options.itemFilter);
+                          form = $(options.itemFilter);
                           form.append($('<input type="text" title="Filter items" value="Search"/>'));
-                          var inputElem = $("input:last", form);
+                          inputElem = $("input:last", form);
                           //inputElem.hover(function(){ this.val(''); });
                           l(options.itemFilter + " form set up");
-                          delete options["itemFilter"];
+                          delete options.itemFilter;
                           form.submit(function(e){
                             l("submitting form " + form.selector);
                             var val = shortenItem(inputElem.val());
                             if (val) {
-                              options["startkey"] = val;
-                              options["endkey"] = val + "\u9999"; // biggest UTF character starting with val
+                              options.startkey = val;
+                              options.endkey = val + "\u9999"; // biggest UTF character starting with val
                               that.showViewResults(options);
                             } else {
-                              options["view"] = "home/allItems";
-                              options["startkey"] = '';
-                              options["endkey"] = '\u9999';
+                              options.view = "home/allItems";
+                              options.startkey = '';
+                              options.endkey = '\u9999';
                               that.showViewResults(options);
                             }
                             return false;
@@ -152,7 +154,7 @@
                         var selector = options.placeholder;
                         var template = options.template;
                         var view = options.view;
-                        delete options["placeholder"];
+                        delete options.placeholder;
 
                         if (typeof options.setListener !== 'undefined'){
                           // a setListener directive has to be sent to register or 
@@ -166,10 +168,10 @@
                             listeners[selector] = options;
                           }
                         }
-                        var viewOpts = $.extend({}, options)
-                        delete viewOpts["template"];
-                        delete viewOpts["view"];
-                        delete viewOpts["setListener"];
+                        var viewOpts = $.extend({}, options);
+                        delete viewOpts.template;
+                        delete viewOpts.view;
+                        delete viewOpts.setListener;
                         // extraneous options deleted. 
                         // now the remaining can be sent to db.view as is
                         db.view(view, $.extend(viewOpts, {
@@ -184,7 +186,6 @@
     deleteItem:       function(doc, options){
                         var that = this;
                         options = options || {};
-                        bishdoc = doc;
                         l("deleting item '" + doc.value + "'");
                         db.removeDoc(
                             doc,
@@ -272,6 +273,14 @@
                                      }
                           }, options));
                         }
+                      },
+    clearSelectedItems: function(){
+                          l("clearing item selection for new relation");
+
+                          selectedItems = [];
+                        },
+    searchForItem:    function(doc, callback, options){
+                        
                       },
     setupLogin:       function(options){
                         options = options || {};

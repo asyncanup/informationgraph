@@ -56,10 +56,12 @@ $(document).ready(function(){
             .text(selectText[index]);
         }
       });
+      return false; // to prevent the click from bubbling up
     })
     .delegate(".itemDelete", "click", function(){
       var doc = $.extend({}, $.tmplItem(this).data);
       $.ig.deleteItem(doc);
+      return false;
     })
     .delegate(".itemValue", "dblclick", function(){
       var tmplItem = $.tmplItem(this);
@@ -67,6 +69,14 @@ $(document).ready(function(){
       tmplItem.update();
       $(tmplItem.nodes).find("input").focus();
       // can i safely use tmplItem.nodes?
+      return false;
+    })
+    .delegate(".itemSearch", "click", function(){
+      var doc = $.extend({}, $.tmplItem(this).data);
+      $.ig.searchForItem(doc, function(relations){
+        
+      });
+      return false;
     })
     .delegate(".itemEditForm", "submit", function(){
       var input = $(this).find("input.itemInput");
@@ -74,12 +84,14 @@ $(document).ready(function(){
       var tmplItem = $.tmplItem(this);
       var doc = $.extend({}, tmplItem.data);
 
-      if (doc.value === val){
-        // no changes
-        tmplItem.tmpl = $("#itemTemplate").template();
-        tmplItem.update();
-        return false;
-      }
+      // ISSUE: do we need this?
+      //$.ig.clearSelectedItems();
+      //if (doc.value === val){
+        //// no changes
+        //tmplItem.tmpl = $("#itemTemplate").template();
+        //tmplItem.update();
+        //return false;
+      //}
 
       doc.value = val;
       $.ig.editItem(doc);

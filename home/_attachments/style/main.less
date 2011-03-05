@@ -15,6 +15,7 @@
 
 @body-padding-top:  20px;
 @body-padding-left: 2%;
+@default-input-padding: 5px;
 
 @notification: #FFEEBB;
 
@@ -24,12 +25,21 @@
   -webkit-border-radius:  @radius;
 }
 
-
-body {
-  background-color: @light-primary-1;
+.body-font(){
   font-family:      Arial, Helvetica, Sans-Serif;
   font-size:        14px;
+}
+
+body {
+  .body-font;
+  background-color: @light-primary-1;
   padding:          @body-padding-top @body-padding-left;
+}
+
+input {
+  .body-font;
+  height:           20px;
+  padding:          0 @default-input-padding;
 }
 
 #header {
@@ -120,6 +130,12 @@ body {
   .itemValue {
     .itemMain;
     cursor:           default;
+    .itemSearch {
+      cursor:         pointer;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
   .itemSelect {
     .itemOption;
@@ -159,18 +175,16 @@ body {
     #itemFilter {
       input {
         .itemInput;
-        width:              @sidebar-width;
+        width:              @sidebar-width - 2*@default-input-padding;
         margin-bottom:      3px;
         .border-radius;
       }
-    }
-    #itemList {
     }
     #newItem {
       input {
         .itemInput;
         .border-radius;
-        width:              @sidebar-width;
+        width:              @itemMain-total-width - 2*@default-input-padding;
         margin-top:         2px;
       }
     }

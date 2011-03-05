@@ -38,7 +38,9 @@
   <script id="itemTemplate" type="text/x-jquery-tmpl">
     <div id="${_id}" rev="${_rev}" created_at="${created_at}" class="item">
       <div class="itemSelect" title="Select">-</div>
-      <div class="itemValue" title="Double Click to edit">${value}</div> 
+      <div class="itemValue" title="Double Click to edit">
+        <span class="itemSearch" title="Click to search">${value}</span>
+      </div> 
     </div>
   </script>
   <script id="itemEditTemplate" type="text/x-jquery-tmpl">
