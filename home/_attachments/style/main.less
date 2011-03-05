@@ -1,32 +1,6 @@
 // LESS
 
-/* THEME 1                    */
-/*@light-primary-1:   #65A6D1;*/
-/*@light-primary-2:   #3E97D1;*/
-/*@primary:           #0A67A3;*/
-/*@dark-primary-2:    #24587A;*/
-/*@dark-primary-1:    #03426A;*/
-
-/*@light-secondary-1: #FFC173;*/
-/*@light-secondary-2: #FFAA40;*/
-/*@secondary:         #FF8E00;*/
-/*@dark-secondary-2:  #BF8030;*/
-/*@dark-secondary-1:  #A65C00;*/
-
-/* THEME 2                    */
-/*@light-primary-1:   #B9E1FC;*/
-/*@light-primary-2:   #A0D8FC;*/
-/*@primary:           #B0C9F8;*/
-/*@dark-primary-2:    #76A0BA;*/
-/*@dark-primary-1:    #2A72A1;*/
-
-/*@light-secondary-1: #FFDFB7;*/
-/*@light-secondary-2: #FFD39C;*/
-/*@secondary:         #FFC57B;*/
-/*@dark-secondary-2:  #BF9F75;*/
-/*@dark-secondary-1:  #A66E28;*/
-
-/* THEME 3                    */
+/* THEME                  */
 @light-primary-1:   #EBF7FF;
 @light-primary-2:   #E4F4FF;
 @primary:           #DBF1FF;
@@ -43,9 +17,6 @@
 @body-padding-left: 2%;
 
 @notification: #FFEEBB;
-
-@sidebar-width:     15%;
-@sidebar-main-gap:  2%;
 
 .border-radius(@radius: 3px){
   border-radius:          @radius;
@@ -90,81 +61,97 @@ body {
     color:            darken(@dark-primary-1, 30%);
   }
 
-.itemInput(@border: 1px solid gray, @focus-border: 1px solid black) {
-  width:            99%;
-  background-color: lighten(@light-secondary-2, 3%);
-  border:           @border;
+
+
+
+@item-line-height:    25px;
+
+@itemOption-width:    18px;
+@itemOption-padding:  2px;
+@itemOption-total-width: @itemOption-width + 2*@itemOption-padding;
+
+@itemMain-width:      150px;
+@itemMain-padding:    5px;
+@itemMain-total-width: @itemMain-width + 2*@itemMain-padding;
+
+@sidebar-width:       @itemMain-total-width + @itemOption-total-width;
+@sidebar-main-gap:    20px;
+
+.itemInput(@border:   1px solid gray, @focus-border: 1px solid black) {
+  background-color:   lighten(@light-secondary-2, 3%);
+  border:             @border;
   &:hover {
     background-color: @light-secondary-2;
   }
   &:focus {
-    border:         @focus-border;
+    border:           @focus-border;
   }
 }
 
 /* For .itemSelect and .itemDelete */
-.itemTdOption(){
+.itemOption(){
   cursor:           pointer;
-  padding:          0 2px;
-  width:            1.2em;
+  padding:          0 @itemOption-padding;
+  width:            @itemOption-width;
   text-align:       center;
   color:            @light-primary-2;
+  float:            right;
+  background-color: @dark-secondary-2;
+}
+
+/* For .itemValue and .itemEditForm input */
+.itemMain(){
+  margin-right:     @itemOption-total-width;
+  width:            @itemMain-width;
+  padding:          0 @itemMain-padding;
 }
 
 #content {
   #sidebar {
-    float:            left;
-    width:            @sidebar-width;
+    float:                  left;
     #itemFilter {
       input {
         .itemInput;
-        margin-bottom: 5px;
+        width:              @sidebar-width;
+        margin-bottom:      3px;
+        .border-radius;
       }
     }
     #itemList {
-      width:                100%;
       .item {
-        line-height:        1.8em;
+        line-height:        @item-line-height;
         background-color:   @light-primary-2;
         border:             1px solid @dark-primary-2;
         &:hover {
           background-color: darken(@light-primary-2, 5%);
           .itemDelete {
-            color:            maroon;
-          }
-          .itemSelect {
-            .border-radius;
+            color:          maroon;
           }
         }
         .itemValue {
+          .itemMain;
           cursor:           default;
-          padding:          0 5px;
         }
         .itemSelect {
-          .itemTdOption;
-          background-color: @dark-secondary-2;
-          .subject {
-            color:          red;
-          }
-          .predicate {
-            color:          green;
-          }
-          .object {
-            color:          blue;
-          }
+          .itemOption;
         }
         .itemEdit {
-          input {
-            .itemInput(0, 0);
-            height:             1.5em;
-            background-color:   white;
-            &:hover {
-              background-color: white;
+          margin-right:     @itemOption-total-width;
+          .itemEditForm {
+            input {
+              .itemInput(0, 0);
+              .itemMain;
+              height:             @item-line-height - 1;
+              margin-right:       0;
+              background-color:   white;
+              &:hover {
+                background-color: white;
+              }
             }
           }
         }
         .itemDelete {
-          .itemTdOption;
+          .itemOption;
         }
       }
       .selected {
@@ -180,15 +167,16 @@ body {
     #newItem {
       input {
         .itemInput;
-        margin-top: 2px;
+        .border-radius;
+        width:              @sidebar-width;
+        margin-top:         2px;
       }
     }
   }
   #main {
     position:           relative;
     top:                0;
-    left:               @sidebar-width + @sidebar-main-gap;
-    width:              100% - @sidebar-width - @sidebar-main-gap;
+    margin-left:               @sidebar-width + @sidebar-main-gap;
   }
 }
 

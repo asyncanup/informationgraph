@@ -72,6 +72,7 @@
                           var that = this;
                           l("refreshing view results");
 
+                          selectedItems = [];
                           for (key in listeners){
                             if (listeners[key].setListener){
                               // to not touch the placeholders that have been unregistered
@@ -146,7 +147,7 @@
                         l("showing view results"); 
                         options = options || {};
                         options.placeholder = options.placeholder || "#itemList";
-                        options.template = options.template || "#itemTemplate";
+                        options.template = options.template || "#itemListTemplate";
                         options.view = options.view || "home/allItems";
                         var selector = options.placeholder;
                         var template = options.template;

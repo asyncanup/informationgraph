@@ -24,9 +24,9 @@
       </div>
       <div id="main">
         <div class="center">
-          <table id="subjectRelationList"></table>
-          <table id="queryRelationList"></table>
-          <table id="objectRelationList"></table>
+          <div id="subjectRelationList"></div>
+          <div id="queryRelationList">hellp</div>
+          <div id="objectRelationList"></div>
         </div>
       </div>
     </div>
@@ -36,24 +36,27 @@
 
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
-    <tr id="${_id}" rev="${_rev}" created_at="${created_at}" class="item">
-      <td class="itemValue" title="Double Click to edit">${value}</td> 
-      <td class="itemSelect" title="Select">-</td>
-    </tr>
+    <div id="${_id}" rev="${_rev}" created_at="${created_at}" class="item">
+      <div class="itemSelect" title="Select">-</div>
+      <div class="itemValue" title="Double Click to edit">${value}</div> 
+    </div>
   </script>
   <script id="itemEditTemplate" type="text/x-jquery-tmpl">
-    <tr id="${_id}" rev="${_rev}" created_at="${created_at}" originalValue="${value}" class="item">
-      <td class="itemEdit">
+    <div id="${_id}" rev="${_rev}" created_at="${created_at}" originalValue="${value}" class="item">
+      <div class="itemDelete" title="Delete Item">x</div>
+      <div class="itemEdit">
         <form class="itemEditForm">
           <input class="itemInput" title="Enter new value" value="${value}"/>
         </form>
-      </td>
-      <td class="itemDelete" title="Delete Item">x</td>
-    </tr>
+      </div>
+    </div>
+  </script>
+  <script id="itemListTemplate" type="text-jquery-tmpl">
+    <tr><td>{{tmpl "#itemTemplate"}}</td></tr>
   </script>
   <script id="relationTemplate" type="text/x-jquery-tmpl">
     <tr id="${_id}" rev="${_rev}" created_at="${created_at}" class="relation">
-      <td class="subject">
+      <td class="subject itemValue">
         <form><input class="itemInput" title="Enter new value" value="${value}"/></form>
       </td>
       <td class="itemDelete" title="Delete Item">x</td>
