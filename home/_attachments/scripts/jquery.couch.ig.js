@@ -159,10 +159,9 @@
                       },
     search:           function(options, callback){
                         var that = this;
-                        // TODO: all view queries to be done here (or only through here)
-                        // use lazy fetching (the fetch function then pulls bulk docs)
-                        // simply take the query (for items or relations) and 
-                        // return the relevant documents based on the option parameters provided
+                        // TODO: use lazy fetching (docs pulled in bulk)
+                        // no repeated _ids please (as is the case in item search
+                        // when a word has a non-adjacent repeated letter)
                         if (!options || !options.view || !options.type){
                           throw("incomplete options parameter to search");
                         }
@@ -170,7 +169,8 @@
                         var viewOpts = $.extend({}, options);
                         var view = viewOpts.view;
                         delete viewOpts.view;
-                        viewOpts.include_docs = viewOpts.include_docs || true; // ISSUE: do this? i think yes
+                        // ISSUE: default include_docs? i think yes
+                        viewOpts.include_docs = viewOpts.include_docs || true; 
                         if (options.type === "item"){
                           db.view(view, $.extend(viewOpts, {
                             success: function(data){ 
@@ -298,7 +298,8 @@
                           //selectedItems = [];
                         //},
     setupLogin:       function(loginOptions, loggedIn, loggedOut){
-                        // TODO: No GUI in here please
+                        // ISSUE: Ok with loggedIn/loggedOut having to return dom 
+                        // elements to put click handlers on in here?
                         loginOptions = loginOptions || {};
                         var loginData = loginOptions.loginData || 
                                         {"name": "_", "password": "_"};
