@@ -17,15 +17,19 @@
 
     <div id="content">
       <div id="sidebar">
-        <form id="itemFilter"></form>
+        <input type="text" id="itemFilter"
+               title="Filter items" value="Search"/>
         <table id="itemList">
         </table>
-        <form id="newItem"></form>
+        <form class="newItem">
+          <input type="text" name="newItemValue" 
+                 title="Enter item value" value="Add New Item"/>
+        </form>
       </div>
       <div id="main">
         <div class="center">
           <table id="subjectRelationList"></table>
-          <table id="queryRelationList">hellp</table>
+          <table id="queryRelationList"></table>
           <table id="objectRelationList"></table>
         </div>
       </div>
@@ -58,9 +62,9 @@
   </script>
   <script id="relationListTemplate" type="text/x-jquery-tmpl">
     <tr id="${_id}" rev="${_rev}" created_at="${created_at}" class="relation">
-      <td class="subject">{{tmpl(${subjectDoc}) "#itemTemplate"}}</td>
-      <td class="predicate">{{tmpl(${predicateDoc}) "#itemTemplate"}}</td>
-      <td class="object">{{tmpl(${objectDoc}) "#itemTemplate"}}</td>
+      <td class="subject">${subject}</td>
+      <td class="predicate">${predicate}</td>
+      <td class="object">${object}</td>
     </tr>
   </script>
   <script src="scripts/jquery.js"></script>

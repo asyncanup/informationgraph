@@ -8,35 +8,61 @@ $(document).ready(function(){
           .text(text)
           .fadeIn("fast").delay(3000).fadeOut("slow");
       })
-      // TODO: setupLogin, setupForm and showViewResults to be changed
-      // $.ig should have no knowledge or assumptions about GUI
-      // and edit the templates
       .setupLogin({ 
         "loginData": getLoginData(),
-        "loginButton": "#loginButton"
-      })
-      .setupForm({ 
-        "newItem":  "#newItem"
-      })
-      .setupForm({
-        "itemFilter": "#itemFilter",
-        "view": "home/itemSuggestions",
-        "placeholder": "#itemList",
-        "template": "#itemListTemplate", // #itemSuggestionsTemplate ?
-        "include_docs": true,
-        "setListener": true
-      })
+        }, 
+        function(){
+          $("#loginButton").text("Logout");
+          return $("#loginButton");
+        },
+        function(){
+          $("#loginButton").text("Logout");
+          return $("#loginButton");
+        }
+      )
       .showViewResults({
-        "view": "home/allItems", 
-        "template": "#itemListTemplate",
-        "placeholder": "#itemList",
-        "include_docs": true,
-        "setListener": true
+        "view":           "home/allItems", 
+        "template":       "#itemListTemplate",
+        "placeholder":    "#itemList",
+        "setListener":    true,
+        "type":           "item"
       });
 
-  $("#itemList")
+  $("#itemFilter").change(function(){
+    var val = shortenItem($(this).val());
+    if (val) {
+      $.ig.showViewResults({
+        "view":           "home/itemSuggestions",
+        "startkey":       val,
+        "endkey":         val + "\u9999",
+        "placeholder":    "#itemList",
+        "template":       "#itemListTemplate",
+        "setListener":    true,
+        "type":           "item"
+      });
+    } else {
+      $.ig.showViewResults({
+        "view":           "home/allItems",
+        "startkey":       "",
+        "endkey":         "\u9999",
+        "placeholder":    "#itemList",
+        "template":       "#itemListTemplate",
+        "setListener":    true,
+        "type":           "item"
+      })
+    }
+  });
+
+  $("#content")
     // sends the data used to render the template earlier, 
     // which is basically the item doc
+    .delegate(".newItem", "submit", function(){
+      if($.ig.newItem($(this.newItemValue).val())){
+        // if saved
+        $(this.newItemValue).val("");
+      }
+      return false;
+    })
     .delegate(".itemSelect", "click", function(){
       var tmplItem = $.tmplItem(this);
       var doc = $.extend({}, tmplItem.data);
@@ -73,8 +99,13 @@ $(document).ready(function(){
     })
     .delegate(".itemSearch", "click", function(){
       var doc = $.extend({}, $.tmplItem(this).data);
-      $.ig.search(doc, function(relations){
-        $("#queryRelationList").html("");
+      $.ig.search({
+        "view":       "home/relations",
+        "type":       "relation",
+        "startkey":   [doc._id],
+        "endkey":     [doc._id, {}]
+      }, function(relations){
+        $("#queryRelationList").empty();
         $("#relationListTemplate").tmpl(relations).appendTo("#queryRelationList");
       });
       return false;
@@ -84,16 +115,6 @@ $(document).ready(function(){
       var val = shortenItem(input.val(), { "onlyTrim": true });
       var tmplItem = $.tmplItem(this);
       var doc = $.extend({}, tmplItem.data);
-
-      // ISSUE: do we need this?
-      //$.ig.clearSelectedItems();
-      //if (doc.value === val){
-        //// no changes
-        //tmplItem.tmpl = $("#itemTemplate").template();
-        //tmplItem.update();
-        //return false;
-      //}
-
       doc.value = val;
       $.ig.editItem(doc);
       return false;

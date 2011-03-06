@@ -97,71 +97,33 @@
                             }
                           }
                         },
-    getListeners:     function(){ return listeners; },
-    clearListeners:   function(){ l("cleared all listeners!"); listeners = {}; },
-    setupForm:        function(options){
-                        // TODO: completely revamp
-                        // no gui here please
+    getListeners:     function(){ 
+                        return listeners; 
+                      },
+    clearListeners:   function(){ 
+                        l("cleared all listeners!"); listeners = {}; 
+                      },
+    newItem:          function(val){
                         var that = this;
-                        var form, inputElem;
-                        if (!options.form) {
-                          throw("no form specified to setupForm");
-                        }
-                        if (options.newItem){
-                          form = $(options.newItem);
-                          form.append($('<input type="text" title="Enter item value" value="Add New Item"/>'));
-                          inputElem = $("input:last", form);
-                          l(options.newItem + " form set up");
-                          delete options.newItem;
-                          form.submit(function(e){
-                            l("submitting form " + form.selector); 
-                            // note that the selector may become outdated by the time the form 
-                            // is submitted, if there have been dom changes in the meantime
-                            db.saveDoc({
-                              "type":   "item",
-                              // trim, remove repeated whitespace in value string
-                              // this is a contentious issue, if this should be done or not
-                              "value":  shortenItem(inputElem.val(), { "onlyTrim": true }),
-                              "created_at": timestamp()
-                            }, {
-                              success:  function(data){
-                                l("saved document, notifying app");
-                                // now refresh the relevant view results
-                                that.notify({
-                                  "action": "Created",
-                                  "data": inputElem.val()
-                                });
-                                inputElem.val("");
-                              }
-                            });
-                            return false;
-                          });
-                          l("bound submit event handler to form: " + form.selector);
-                        } else if (options.itemFilter && options.view){
-                          form = $(options.itemFilter);
-                          form.append($('<input type="text" title="Filter items" value="Search"/>'));
-                          inputElem = $("input:last", form);
-                          //inputElem.hover(function(){ this.val(''); });
-                          l(options.itemFilter + " form set up");
-                          delete options.itemFilter;
-                          form.submit(function(e){
-                            l("submitting form " + form.selector);
-                            var val = shortenItem(inputElem.val());
-                            if (val) {
-                              options.startkey = val;
-                              options.endkey = val + "\u9999"; // biggest UTF character starting with val
-                              that.showViewResults(options);
-                            } else {
-                              options.view = "home/allItems";
-                              options.startkey = '';
-                              options.endkey = '\u9999';
-                              that.showViewResults(options);
-                            }
-                            return false;
-                          });
-                          l("bound submit event handler to form: " + form.selector);
-                        }
-                        return this;
+                        val = shortenItem(val, { "onlyTrim": true });
+                        var isSaved = false;
+                        db.saveDoc({
+                          "type":   "item",
+                          // trim, remove repeated whitespace in value string
+                          // this is a contentious issue, if this should be done or not
+                          "value":  val,
+                          "created_at": timestamp()
+                        }, {
+                          success:  function(data){
+                                      isSaved = true;
+                                      l("saved new item");
+                                      that.notify({
+                                        "action": "Created",
+                                        "data": val
+                                      });
+                                    }
+                        });
+                        return isSaved;
                       },
     showViewResults:  function(options){
                         // TODO: do not query db, just use values from cache
@@ -195,7 +157,8 @@
                         });
                         return this;
                       },
-    search:           function(options){ // (doc, callback, options)?
+    search:           function(options, callback){
+                        var that = this;
                         // TODO: all view queries to be done here (or only through here)
                         // use lazy fetching (the fetch function then pulls bulk docs)
                         // simply take the query (for items or relations) and 
@@ -214,6 +177,7 @@
                                        l("item query returned successfully with " + 
                                          data.rows.length + " items");
                                        docs = data.rows.map(function(row){ return row.doc; });
+                                       callback(docs);
                                      }
                           }));
                         } else if (options.type === "relation"){
@@ -222,17 +186,19 @@
                           db.view(view, $.extend(viewOpts, {
                             success: function(data){
                                        l("relation query returned successfully with " + 
-                                         data.rows.length + " relations");
-                                       docs = data.rows.map(function(row){ return row.doc; });
-                                       if (viewOpts.recursive) {
-                                         docs.map(function(d){
-                                           return getRecursively(d, viewOpts.level_deep);
-                                         });
-                                       }
+                                           data.rows.length + " relations");
+                                       docs = data.rows.map(function(row){ 
+                                         return row.doc; 
+                                       });
+                                       callback(docs);
+                                       //if (viewOpts.recursive) {
+                                         //docs.map(function(d){
+                                           //return getRecursively(d, viewOpts.level_deep);
+                                         //});
+                                       //}
                                      }
                           }));
                         }
-                        return docs;
                       },
     deleteItem:       function(doc, options){
                         var that = this;
@@ -292,7 +258,6 @@
                             // checking if the received item is not already selected
                             // (except for the case when it was the last seleted item,
                             // which has been handled above)
-                            var flag = false;
                             selectedItems.forEach(function(item){
                               if (item._id === doc._id){
                                 throw("item already selected");
@@ -303,6 +268,7 @@
                         select();
                         if (selectedItems.length >= 3){
                           l("subject, predicate and object selected, making relation");
+                          console.log(selectedItems);
                           db.saveDoc({
                             "type":       "relation",
                             "subject":    selectedItems[0]._id,
@@ -311,16 +277,18 @@
                             "created_at": timestamp()
                           }, $.extend({
                             success: function(d){
-                                       var relationText = selectedItems.map(function(item){ 
-                                           return item.value; 
-                                       }).join(" - ");
+                                       l("relation saved");
+                                       var relationText = selectedItems
+                                                            .map(function(item){ 
+                                                              return item.value; 
+                                                            }).join(" - ");
                                        selectedItems = [];
                                        that.notify({
                                          "action": "Created",
                                          "data": relationText
                                        });
                                      }
-                          }, options));
+                          }, {})); // because there are no options parameters
                         }
                       },
     // This leaves the gui for selected items as it is. Not cool.
@@ -329,43 +297,35 @@
 
                           //selectedItems = [];
                         //},
-    setupLogin:       function(options){
+    setupLogin:       function(loginOptions, loggedIn, loggedOut){
                         // TODO: No GUI in here please
-                        options = options || {};
+                        loginOptions = loginOptions || {};
+                        var loginData = loginOptions.loginData || 
+                                        {"name": "_", "password": "_"};
 
-                        var loginButton = options.loginButton || "#loginButton";
-                        // loginButton can be any element, not just a button
-                        var loginData = options.loginData || {"name": "_", "password": "_"};
-
-                        var loginSuccessHandler = function(res){ 
-                          l("Login Successful");
-                          $(loginButton).text("Logout");
-                        };
-                        var logoutSuccessHandler = function(res){ 
-                          l("Logout Successful");
-                          $(loginButton).text("Login");
-                        };
-
+                        if (!loggedIn || !loggedOut){
+                          throw("missing login/logout success handler");
+                        }
                         var login = function(){
                           l("Logging in");
-                          $.couch.login($.extend(loginData, {success: loginSuccessHandler}));
+                          $.couch.login($.extend(loginData, {success: loggedIn}));
                         };
                         var logout = function(){
                           l("Logging out");
-                          $.couch.logout({success: logoutSuccessHandler});
+                          $.couch.logout({success: loggedOut});
                         };
 
+                        var loginElem; // on clicking which you login/logout
                         $.couch.session({
                           success: function(res){
-                                     var toggleList = [];
                                      if (res.userCtx.roles.length === 0){
                                        l("userCtx.roles is empty");
-                                       $(loginButton).text("Login");
-                                       $(loginButton).toggle(login, logout);
+                                       loginElem = loggedOut();
+                                       loginElem.toggle(login, logout);
                                      } else {
                                        l("userCtx.roles is non-empty");
-                                       $(loginButton).text("Logout");
-                                       $(loginButton).toggle(logout,login);  
+                                       loginElem = loggedIn();
+                                       loginElem.toggle(logout,login);  
                                      }
                                    }
                         });
