@@ -73,8 +73,9 @@ $(document).ready(function(){
     })
     .delegate(".itemSearch", "click", function(){
       var doc = $.extend({}, $.tmplItem(this).data);
-      $.ig.searchForItem(doc, function(relations){
-        
+      $.ig.search(doc, function(relations){
+        $("#queryRelationList").html("");
+        $("#relationListTemplate").tmpl(relations).appendTo("#queryRelationList");
       });
       return false;
     })

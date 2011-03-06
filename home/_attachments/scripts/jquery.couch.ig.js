@@ -18,12 +18,20 @@
   }
   function render(template, arrayData, placeholder){
     l("rendering in " + placeholder);
-    $(placeholder).html("");
+    $(placeholder).empty();
     $(template).tmpl(arrayData).appendTo(placeholder);
   }
   function timestamp(){
     return (new Date()).getTime();
   }
+  // TODO:
+  //function getRecursively(doc, levels_deep) {
+    //levels_deep = level_deep || 2;
+
+  //}
+  //function addToBulkQuery(){
+  
+  //}
 
   $.extend($.ig, {
     debug:            function(cmd){
@@ -45,7 +53,7 @@
                           return db; 
                         }
                       },
-    notification:     function(func){ // callback function
+    notification:     function(func){
                         notifyUI = func;
                         return this;
                       },
@@ -59,9 +67,9 @@
                                       ": '" +
                                       content.data.toString() +
                                       "'";
+                          // use of toString() is contentious, think about it. remove?
                           l(text);
                           notifyUI(text);
-                             // use of toString() is contentious, think about it. remove?
                           if ($.inArray(content.action, 
                                 ["Created", "Deleted", "Edited"]) !== -1){
                             that.refreshViewResults();
@@ -70,12 +78,17 @@
                       },
     refreshViewResults: function(){
                           var that = this;
+                          // TODO: make this the function that gets called every few secs
+                          // it will ask for revision values of all registered items, ie, 
+                          // those cached by this app except for the ones belonging to 
+                          // placeholders with setListener set to false. Then get the full docs 
+                          // for those items that require refreshing and cache them.
                           l("refreshing view results");
 
                           selectedItems = [];
                           for (var selector in listeners){
                             if (listeners[selector].setListener){
-                              // to not touch the placeholders that have been unregistered
+                              // don't touch the placeholders that have been unregistered
                               var options = $.extend(
                                   { "placeholder": selector },
                                   listeners[selector]
@@ -87,8 +100,13 @@
     getListeners:     function(){ return listeners; },
     clearListeners:   function(){ l("cleared all listeners!"); listeners = {}; },
     setupForm:        function(options){
+                        // TODO: completely revamp
+                        // no gui here please
                         var that = this;
                         var form, inputElem;
+                        if (!options.form) {
+                          throw("no form specified to setupForm");
+                        }
                         if (options.newItem){
                           form = $(options.newItem);
                           form.append($('<input type="text" title="Enter item value" value="Add New Item"/>'));
@@ -146,14 +164,15 @@
                         return this;
                       },
     showViewResults:  function(options){
+                        // TODO: do not query db, just use values from cache
+                        var that = this;
+                        if (!options || !options.template || !options.placeholder){
+                          throw("incomplete options parameter to showViewResults");
+                        }
                         l("showing view results"); 
                         options = options || {};
-                        options.placeholder = options.placeholder || "#itemList";
-                        options.template = options.template || "#itemListTemplate";
-                        options.view = options.view || "home/allItems";
                         var selector = options.placeholder;
                         var template = options.template;
-                        var view = options.view;
                         delete options.placeholder;
 
                         if (typeof options.setListener !== 'undefined'){
@@ -168,20 +187,52 @@
                             listeners[selector] = options;
                           }
                         }
-                        var viewOpts = $.extend({}, options);
-                        delete viewOpts.template;
-                        delete viewOpts.view;
-                        delete viewOpts.setListener;
-                        // extraneous options deleted. 
-                        // now the remaining can be sent to db.view as is
-                        db.view(view, $.extend(viewOpts, {
-                          success: function(data){ 
-                                     l("view query returned successfully with " + data.rows.length + " rows");
-                                     var docs = data.rows.map(function(row){ return row.doc; });
-                                     render(template, docs, selector);
-                                   } 
-                        }));
+                        var searchOpts = $.extend({}, options);
+                        delete searchOpts.template;
+                        delete searchOpts.setListener;
+                        this.search(searchOpts, function(results){
+                          render(template, results, selector);
+                        });
                         return this;
+                      },
+    search:           function(options){ // (doc, callback, options)?
+                        // TODO: all view queries to be done here (or only through here)
+                        // use lazy fetching (the fetch function then pulls bulk docs)
+                        // simply take the query (for items or relations) and 
+                        // return the relevant documents based on the option parameters provided
+                        if (!options || !options.view || !options.type){
+                          throw("incomplete options parameter to search");
+                        }
+                        var docs = [];
+                        var viewOpts = $.extend({}, options);
+                        var view = viewOpts.view;
+                        delete viewOpts.view;
+                        viewOpts.include_docs = viewOpts.include_docs || true; // ISSUE: do this? i think yes
+                        if (options.type === "item"){
+                          db.view(view, $.extend(viewOpts, {
+                            success: function(data){ 
+                                       l("item query returned successfully with " + 
+                                         data.rows.length + " items");
+                                       docs = data.rows.map(function(row){ return row.doc; });
+                                     }
+                          }));
+                        } else if (options.type === "relation"){
+                          viewOpts.recursive = viewOpts.recursive || true;
+                          
+                          db.view(view, $.extend(viewOpts, {
+                            success: function(data){
+                                       l("relation query returned successfully with " + 
+                                         data.rows.length + " relations");
+                                       docs = data.rows.map(function(row){ return row.doc; });
+                                       if (viewOpts.recursive) {
+                                         docs.map(function(d){
+                                           return getRecursively(d, viewOpts.level_deep);
+                                         });
+                                       }
+                                     }
+                          }));
+                        }
+                        return docs;
                       },
     deleteItem:       function(doc, options){
                         var that = this;
@@ -218,7 +269,9 @@
                                         }
                             }, options) );
                       },
-    selectItem:       function(doc, toggleGui, options){
+    selectItem:       function(doc, toggleGui){
+                        // NOTE: that there is no options parameter here even though a 
+                        // db.saveDoc query is being made in the function
                         var that = this;
                         function select(){
                           l("selecting item '" + doc.value + "'");
@@ -234,7 +287,7 @@
                           if (doc._id === selectedItems[selectedItems.length - 1]._id){
                             // note: checking only for _id. good with it?
                             unselect();
-                            return false;
+                            return that;
                           } else {
                             // checking if the received item is not already selected
                             // (except for the case when it was the last seleted item,
@@ -242,13 +295,9 @@
                             var flag = false;
                             selectedItems.forEach(function(item){
                               if (item._id === doc._id){
-                                l("item already selected");
-                                flag = true;
-                                // returning here just returns from this 
-                                // immediate function, so moved down
+                                throw("item already selected");
                               }
                             });
-                            if (flag) { return false; }
                           }
                         }
                         select();
@@ -274,15 +323,14 @@
                           }, options));
                         }
                       },
-    clearSelectedItems: function(){
-                          l("clearing item selection for new relation");
+    // This leaves the gui for selected items as it is. Not cool.
+    //clearSelectedItems: function(){
+                          //l("clearing item selection for new relation");
 
-                          selectedItems = [];
-                        },
-    searchForItem:    function(doc, callback, options){
-                        
-                      },
+                          //selectedItems = [];
+                        //},
     setupLogin:       function(options){
+                        // TODO: No GUI in here please
                         options = options || {};
 
                         var loginButton = options.loginButton || "#loginButton";

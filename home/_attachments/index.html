@@ -24,9 +24,9 @@
       </div>
       <div id="main">
         <div class="center">
-          <div id="subjectRelationList"></div>
-          <div id="queryRelationList">hellp</div>
-          <div id="objectRelationList"></div>
+          <table id="subjectRelationList"></table>
+          <table id="queryRelationList">hellp</table>
+          <table id="objectRelationList"></table>
         </div>
       </div>
     </div>
@@ -56,12 +56,11 @@
   <script id="itemListTemplate" type="text-jquery-tmpl">
     <tr><td>{{tmpl "#itemTemplate"}}</td></tr>
   </script>
-  <script id="relationTemplate" type="text/x-jquery-tmpl">
+  <script id="relationListTemplate" type="text/x-jquery-tmpl">
     <tr id="${_id}" rev="${_rev}" created_at="${created_at}" class="relation">
-      <td class="subject itemValue">
-        <form><input class="itemInput" title="Enter new value" value="${value}"/></form>
-      </td>
-      <td class="itemDelete" title="Delete Item">x</td>
+      <td class="subject">{{tmpl(${subjectDoc}) "#itemTemplate"}}</td>
+      <td class="predicate">{{tmpl(${predicateDoc}) "#itemTemplate"}}</td>
+      <td class="object">{{tmpl(${objectDoc}) "#itemTemplate"}}</td>
     </tr>
   </script>
   <script src="scripts/jquery.js"></script>
