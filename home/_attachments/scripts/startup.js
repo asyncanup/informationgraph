@@ -22,7 +22,7 @@ $(document).ready(function(){
       )
       .showViewResults({
         "view":           "home/allItems", 
-        "template":       "#itemListTemplate",
+        "template":       "#itemTemplate",
         "placeholder":    "#itemList",
         "setListener":    true,
         "type":           "item"
@@ -36,7 +36,7 @@ $(document).ready(function(){
         "startkey":       val,
         "endkey":         val + "\u9999",
         "placeholder":    "#itemList",
-        "template":       "#itemListTemplate",
+        "template":       "#itemTemplate",
         "setListener":    true,
         "type":           "item"
       });
@@ -46,7 +46,7 @@ $(document).ready(function(){
         "startkey":       "",
         "endkey":         "\u9999",
         "placeholder":    "#itemList",
-        "template":       "#itemListTemplate",
+        "template":       "#itemTemplate",
         "setListener":    true,
         "type":           "item"
       })

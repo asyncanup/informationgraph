@@ -40,7 +40,7 @@
 
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
-    <div id="${_id}" rev="${_rev}" created_at="${created_at}" class="item">
+    <div rev="${_rev}" created_at="${created_at}" class="item ${_id}">
       <div class="itemSelect" title="Select">-</div>
       <div class="itemValue" title="Double Click to edit">
         <span class="itemSearch" title="Click to search">${value}</span>
@@ -48,7 +48,7 @@
     </div>
   </script>
   <script id="itemEditTemplate" type="text/x-jquery-tmpl">
-    <div id="${_id}" rev="${_rev}" created_at="${created_at}" originalValue="${value}" class="item">
+    <div rev="${_rev}" created_at="${created_at}" originalValue="${value}" class="item ${_id}">
       <div class="itemDelete" title="Delete Item">x</div>
       <div class="itemEdit">
         <form class="itemEditForm">
@@ -56,9 +56,6 @@
         </form>
       </div>
     </div>
-  </script>
-  <script id="itemListTemplate" type="text-jquery-tmpl">
-    <tr><td>{{tmpl "#itemTemplate"}}</td></tr>
   </script>
   <script id="relationListTemplate" type="text/x-jquery-tmpl">
     <tr id="${_id}" rev="${_rev}" created_at="${created_at}" class="relation">
