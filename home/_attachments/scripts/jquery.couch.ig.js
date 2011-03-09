@@ -17,14 +17,6 @@
     if ( window.console && debugMode ) { console.log("ig: " + val); } 
     // if it is desired to log objects, they must first be JSON.stringify'ed
   }
-  function render(doc, options){
-    if (!options || !options.template || !options.placeholder) {
-     throw("incomplete options to render"); 
-    }
-
-    l("rendering doc in " + placeholder);
-    $(template).tmpl(doc).appendTo(placeholder);
-  }
   function timestamp(){
     return (new Date()).getTime();
   }
@@ -34,7 +26,7 @@
     } else {
       db.openDoc(row.id, {
         success: function(doc){
-                   cache.put(doc);
+                   cache.put(row.id, doc);
                    callback(doc);
                  }
       });
@@ -60,6 +52,16 @@
                         } else {
                           return db; 
                         }
+                      },
+    getCache:         function(){
+                        return cache;
+                      },
+    render:           function(doc, options){
+                        l("rendering '" + doc.value + "' in " + options.placeholder);
+                        if (!options || !options.template || !options.placeholder) {
+                          throw("incomplete options to render"); 
+                        }
+                        $(options.template).tmpl(doc).appendTo(options.placeholder);
                       },
     search:           function(options, callback){
                         var that = this;
@@ -185,8 +187,8 @@
                         var searchOpts = $.extend({}, options);
                         delete searchOpts.template;
                         delete searchOpts.setListener;
-                        this.search(searchOpts, function(doc){
-                          render(doc, {
+                        that.search(searchOpts, function(doc){
+                          that.render(doc, {
                             "template":   template,
                             "placeholder":   placeholder
                           });
