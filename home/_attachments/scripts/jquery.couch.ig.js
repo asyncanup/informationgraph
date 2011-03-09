@@ -2,11 +2,12 @@
   $.ig = $.ig || {};
 
   var db;
+  var cachedDocs = {};
   var debugMode = true; // whether debug mode is on
   var selectedItems = [];
-  var listeners = {};
   var notifyUI = function(){};
-  // listenes has jquery dom selectors as keys and options hashes as values
+  var listeners = {};
+  // listenes has jquery dom selectors as keys and options objects as values
   // options have these fields:
   //    view - what view to query. passed as is to db.view
   //    template - what jquery template to use for data display
@@ -24,14 +25,10 @@
   function timestamp(){
     return (new Date()).getTime();
   }
-  // TODO:
-  //function getRecursively(doc, levels_deep) {
-    //levels_deep = level_deep || 2;
-
-  //}
-  //function addToBulkQuery(){
-  
-  //}
+  function fetch(dataFromCouchViewQuery, callback, options){
+    var data = dataFromCouchViewQuery;
+    //data.rows.
+  }
 
   $.extend($.ig, {
     debug:            function(cmd){
@@ -52,6 +49,28 @@
                         } else {
                           return db; 
                         }
+                      },
+    search:           function(options, callback){
+                        var that = this;
+                        if (!options || !options.view || !options.type){
+                          throw("incomplete options parameter to search");
+                        }
+                        var viewOpts = $.extend({}, options);
+                        var view = viewOpts.view;
+                        var type = viewOpts.type;
+                        delete viewOpts.view;
+                        delete viewOpts.type;
+                        // NOTE: setting include_docs=true, hence, has no effect
+                        viewOpts.include_docs = false; 
+                        db.view(view, $.extend(viewOpts, {
+                          success: function(data){ 
+                                     l("search query returned successfully with " + 
+                                         data.rows.length + " items");
+                                     fetchDocs(data, function(docs){
+                                       callback(docs);
+                                     });
+                                   }
+                        }));
                       },
     notification:     function(func){
                         notifyUI = func;
@@ -156,49 +175,6 @@
                           render(template, results, selector);
                         });
                         return this;
-                      },
-    search:           function(options, callback){
-                        var that = this;
-                        // TODO: use lazy fetching (docs pulled in bulk)
-                        // no repeated _ids please (as is the case in item search
-                        // when a word has a non-adjacent repeated letter)
-                        if (!options || !options.view || !options.type){
-                          throw("incomplete options parameter to search");
-                        }
-                        var docs = [];
-                        var viewOpts = $.extend({}, options);
-                        var view = viewOpts.view;
-                        delete viewOpts.view;
-                        // ISSUE: default include_docs? i think yes
-                        viewOpts.include_docs = viewOpts.include_docs || true; 
-                        if (options.type === "item"){
-                          db.view(view, $.extend(viewOpts, {
-                            success: function(data){ 
-                                       l("item query returned successfully with " + 
-                                         data.rows.length + " items");
-                                       docs = data.rows.map(function(row){ return row.doc; });
-                                       callback(docs);
-                                     }
-                          }));
-                        } else if (options.type === "relation"){
-                          viewOpts.recursive = viewOpts.recursive || true;
-                          
-                          db.view(view, $.extend(viewOpts, {
-                            success: function(data){
-                                       l("relation query returned successfully with " + 
-                                           data.rows.length + " relations");
-                                       docs = data.rows.map(function(row){ 
-                                         return row.doc; 
-                                       });
-                                       callback(docs);
-                                       //if (viewOpts.recursive) {
-                                         //docs.map(function(d){
-                                           //return getRecursively(d, viewOpts.level_deep);
-                                         //});
-                                       //}
-                                     }
-                          }));
-                        }
                       },
     deleteItem:       function(doc, options){
                         var that = this;
