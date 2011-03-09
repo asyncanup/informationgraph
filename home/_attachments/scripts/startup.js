@@ -24,6 +24,7 @@ $(document).ready(function(){
         "view":           "home/allItems", 
         "template":       "#itemTemplate",
         "placeholder":    "#itemList",
+        "empty":          true,
         "setListener":    true,
         "type":           "item"
       });
@@ -36,6 +37,7 @@ $(document).ready(function(){
         "startkey":       val,
         "endkey":         val + "\u9999",
         "placeholder":    "#itemList",
+        "empty":          true,
         "template":       "#itemTemplate",
         "setListener":    true,
         "type":           "item"
@@ -46,9 +48,10 @@ $(document).ready(function(){
         "startkey":       "",
         "endkey":         "\u9999",
         "placeholder":    "#itemList",
+        "empty":          true,
         "template":       "#itemTemplate",
         "setListener":    true,
-        "type":           "item"
+        "type":           "item",
       })
     }
   });
@@ -66,7 +69,7 @@ $(document).ready(function(){
     .delegate(".itemSelect", "click", function(){
       var tmplItem = $.tmplItem(this);
       var doc = $.extend({}, tmplItem.data);
-      var elem = $(tmplItem.nodes);
+      var elem = $("." + doc._id); // all elements with this class
 
       var selectText = ["-", "s", "p", "o"];
 
@@ -99,14 +102,14 @@ $(document).ready(function(){
     })
     .delegate(".itemSearch", "click", function(){
       var doc = $.extend({}, $.tmplItem(this).data);
+      $("#queryRelationList").empty();
       $.ig.search({
         "view":       "home/relations",
         "type":       "relation",
         "startkey":   [doc._id],
         "endkey":     [doc._id, {}]
-      }, function(relations){
-        $("#queryRelationList").empty();
-        $("#relationListTemplate").tmpl(relations).appendTo("#queryRelationList");
+      }, function(relation){
+        $("#relationListTemplate").tmpl(relation).appendTo("#queryRelationList");
       });
       return false;
     })

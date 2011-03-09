@@ -5,7 +5,8 @@
   var debugMode = true; // whether debug mode is on
   var selectedItems = [];
   var notifyUI = function(){};
-  var cache = new LRUCache(10000);
+  var cache = new LRUCache(1000);
+  var hose; // to listen to document changes in the database
   var listeners = {};
   // listeners has jquery dom placeholders as keys and options objects as values
   // options have these fields:
@@ -20,18 +21,6 @@
   function timestamp(){
     return (new Date()).getTime();
   }
-  function fetchDoc(row, callback){
-    if (cache.find(row.id)){
-      callback(cache.get(row.id));
-    } else {
-      db.openDoc(row.id, {
-        success: function(doc){
-                   cache.put(row.id, doc);
-                   callback(doc);
-                 }
-      });
-    }
-  }
 
   $.extend($.ig, {
     debug:            function(cmd){
@@ -45,16 +34,40 @@
                         }
                       },
     database:         function(dbname){ 
+                        var that = this;
                         if (dbname) {
                           db = $.couch.db(dbname);
                           l("db set to " + dbname);
-                          return this;
+                          hose = db.changes();
+                          hose.onChange(function(feed){
+                            feed.results.forEach(function(d){
+                              if (d.deleted){
+                                cache.remove(d.id);
+                                l(d.id + " deleted");
+                                return;
+                              }
+                              that.doc(d.id, function(doc){
+                                l(doc._id + " updated");
+                              }, true);
+                            });
+                          });
+                          l("hose set up");
+                          return that;
                         } else {
                           return db; 
                         }
                       },
-    getCache:         function(){
-                        return cache;
+    doc:              function(id, callback, forceFetch){
+                        if (cache.find(id) && !forceFetch){
+                          callback(cache.get(id));
+                        } else {
+                          db.openDoc(id, {
+                            success: function(doc){
+                                       cache.set(id, doc);
+                                       callback(doc);
+                                     }
+                          });
+                        }
                       },
     render:           function(doc, options){
                         l("rendering '" + doc.value + "' in " + options.placeholder);
@@ -80,7 +93,7 @@
                                      l("search query returned successfully with " + 
                                          data.rows.length + " items");
                                      data.rows.forEach(function(row){
-                                       fetchDoc(row, function(doc){
+                                       that.doc(row.id, function(doc){
                                          callback(doc);
                                        });
                                      });
@@ -127,7 +140,6 @@
                                   { "placeholder": placeholder },
                                   listeners[placeholder]
                                   );
-                              $(placeholder).empty();
                               that.showViewResults(options);
                             }
                           }
@@ -170,6 +182,9 @@
                         options = options || {};
                         var placeholder = options.placeholder;
                         var template = options.template;
+                        if (options.empty) {
+                          $(placeholder).empty();
+                        }
                         delete options.placeholder;
 
                         if (typeof options.setListener !== 'undefined'){
