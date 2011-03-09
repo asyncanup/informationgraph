@@ -2,6 +2,7 @@
   $.ig = $.ig || {};
 
   var db;
+  var dbdocs = {};
   var debugMode = true; // whether debug mode is on
   var selectedItems = [];
   var listeners = {};
@@ -74,6 +75,13 @@
                                 ["Created", "Deleted", "Edited"]) !== -1){
                             that.refreshViewResults();
                           }
+                        }
+                      },
+    getItem:          function (id, callback){
+                        if (dbdocs[id]){
+                          callback(dbdocs[id]);
+                        } else {
+                          fetch(id, callback);
                         }
                       },
     refreshViewResults: function(){

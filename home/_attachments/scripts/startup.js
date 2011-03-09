@@ -16,7 +16,7 @@ $(document).ready(function(){
           return $("#loginButton");
         },
         function(){
-          $("#loginButton").text("Logout");
+          $("#loginButton").text("Login");
           return $("#loginButton");
         }
       )
