@@ -1,5 +1,20 @@
 $(document).ready(function(){
 
+  function render(doc, placeholder, template) {
+    if (onPage(doc)){ 
+      $.ig.refresh(doc); 
+    }
+    else { 
+      $(placeholder).append($(template).tmpl(doc)); 
+    }
+  }
+
+  // NOTE: Extending JQuery in this statement
+  $.fn.exists = function(){ return $(this).length !== 0; }
+  function onPage(doc){
+    return $("[doc_id=" + doc._id + "]").exists();
+  }
+
   $.ig.debug("start")
       .database("informationgraph")
       .notification(function(text){
@@ -8,7 +23,7 @@ $(document).ready(function(){
           .text(text)
           .fadeIn("fast").delay(3000).fadeOut("slow");
       })
-      .setupLogin({ 
+      .setupLogin({
         "loginData": getLoginData(),
         }, 
         function(){
@@ -20,45 +35,43 @@ $(document).ready(function(){
           return $("#loginButton");
         }
       )
-      .showViewResults({
-        "view":           "home/allItems", 
-        "template":       "#itemTemplate",
-        "placeholder":    "#itemList",
-        "empty":          true,
-        "setListener":    true,
-        "type":           "item"
+      .refresh(function(doc){
+        if (onPage(doc)){
+          elem.replaceWith($("#" + doc.type + "Template").tmpl(doc));
+        }
+      })
+      .linkPlaceholder("#itemList", {
+        "view":           "home/allItems",
+        "beforeRender":   function(){ #("#itemList").empty(); },
+        "render":         render(doc, "#itemList", "#itemTemplate")
       });
 
   $("#itemFilter").change(function(){
     var val = shortenItem($(this).val());
     if (val) {
-      $.ig.showViewResults({
-        "view":           "home/itemSuggestions",
-        "startkey":       val,
-        "endkey":         val + "\u9999",
-        "placeholder":    "#itemList",
-        "empty":          true,
-        "template":       "#itemTemplate",
-        "setListener":    true,
-        "type":           "item"
+      $.ig.linkPlaceholder("#itemList", {
+          "view":           "home/itemSuggestions",
+          "query":          {
+                              "startkey": val,
+                              "endkey":   val + "\u9999"
+                            },
+          "beforeRender":   function(){ #("#itemList").empty(); },
+          "render":         render(doc, "#itemList", "#itemTemplate")
       });
     } else {
-      $.ig.showViewResults({
-        "view":           "home/allItems",
-        "startkey":       "",
-        "endkey":         "\u9999",
-        "placeholder":    "#itemList",
-        "empty":          true,
-        "template":       "#itemTemplate",
-        "setListener":    true,
-        "type":           "item",
-      })
+      $.ig.linkPlaceholder("#itemList", {
+          "view":           "home/allItems",
+          "query":          {
+                              "startkey": "",
+                              "endkey":   "\u9999"
+                            },
+          "beforeRender":   function(){ #("#itemList").empty(); },
+          "render":         render(doc, "#itemList", "#itemTemplate")
+      });
     }
   });
 
   $("#content")
-    // sends the data used to render the template earlier, 
-    // which is basically the item doc
     .delegate(".newItem", "submit", function(){
       if($.ig.newItem($(this.newItemValue).val())){
         // if saved
@@ -67,6 +80,7 @@ $(document).ready(function(){
       return false;
     })
     .delegate(".itemSelect", "click", function(){
+      // TODO: everything below this to be refactored asap
       var tmplItem = $.tmplItem(this);
       var doc = $.extend({}, tmplItem.data);
       var elem = $("." + doc._id); // all elements with this class
