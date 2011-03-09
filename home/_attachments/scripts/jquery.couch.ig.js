@@ -2,12 +2,12 @@
   $.ig = $.ig || {};
 
   var db;
-  var dbdocs = {};
   var debugMode = true; // whether debug mode is on
   var selectedItems = [];
-  var listeners = {};
   var notifyUI = function(){};
-  // listenes has jquery dom selectors as keys and options hashes as values
+  var cache = new LRUCache(10000);
+  var listeners = {};
+  // listeners has jquery dom placeholders as keys and options objects as values
   // options have these fields:
   //    view - what view to query. passed as is to db.view
   //    template - what jquery template to use for data display
@@ -17,22 +17,29 @@
     if ( window.console && debugMode ) { console.log("ig: " + val); } 
     // if it is desired to log objects, they must first be JSON.stringify'ed
   }
-  function render(template, arrayData, placeholder){
-    l("rendering in " + placeholder);
-    $(placeholder).empty();
-    $(template).tmpl(arrayData).appendTo(placeholder);
+  function render(doc, options){
+    if (!options || !options.template || !options.placeholder) {
+     throw("incomplete options to render"); 
+    }
+
+    l("rendering doc in " + placeholder);
+    $(template).tmpl(doc).appendTo(placeholder);
   }
   function timestamp(){
     return (new Date()).getTime();
   }
-  // TODO:
-  //function getRecursively(doc, levels_deep) {
-    //levels_deep = level_deep || 2;
-
-  //}
-  //function addToBulkQuery(){
-  
-  //}
+  function fetchDoc(row, callback){
+    if (cache.find(row.id)){
+      callback(cache.get(row.id));
+    } else {
+      db.openDoc(row.id, {
+        success: function(doc){
+                   cache.put(doc);
+                   callback(doc);
+                 }
+      });
+    }
+  }
 
   $.extend($.ig, {
     debug:            function(cmd){
@@ -53,6 +60,30 @@
                         } else {
                           return db; 
                         }
+                      },
+    search:           function(options, callback){
+                        var that = this;
+                        if (!options || !options.view || !options.type){
+                          throw("incomplete options parameter to search");
+                        }
+                        var viewOpts = $.extend({}, options);
+                        var view = viewOpts.view;
+                        var type = viewOpts.type;
+                        delete viewOpts.view;
+                        delete viewOpts.type;
+                        viewOpts.include_docs = false; 
+                        // NOTE: setting include_docs=true, hence, has no effect
+                        db.view(view, $.extend(viewOpts, {
+                          success: function(data){ 
+                                     l("search query returned successfully with " + 
+                                         data.rows.length + " items");
+                                     data.rows.forEach(function(row){
+                                       fetchDoc(row, function(doc){
+                                         callback(doc);
+                                       });
+                                     });
+                                   }
+                        }));
                       },
     notification:     function(func){
                         notifyUI = func;
@@ -77,13 +108,6 @@
                           }
                         }
                       },
-    getItem:          function (id, callback){
-                        if (dbdocs[id]){
-                          callback(dbdocs[id]);
-                        } else {
-                          fetch(id, callback);
-                        }
-                      },
     refreshViewResults: function(){
                           var that = this;
                           // TODO: make this the function that gets called every few secs
@@ -94,13 +118,14 @@
                           l("refreshing view results");
 
                           selectedItems = [];
-                          for (var selector in listeners){
-                            if (listeners[selector].setListener){
+                          for (var placeholder in listeners){
+                            if (listeners[placeholder].setListener){
                               // don't touch the placeholders that have been unregistered
                               var options = $.extend(
-                                  { "placeholder": selector },
-                                  listeners[selector]
+                                  { "placeholder": placeholder },
+                                  listeners[placeholder]
                                   );
+                              $(placeholder).empty();
                               that.showViewResults(options);
                             }
                           }
@@ -141,7 +166,7 @@
                         }
                         l("showing view results"); 
                         options = options || {};
-                        var selector = options.placeholder;
+                        var placeholder = options.placeholder;
                         var template = options.template;
                         delete options.placeholder;
 
@@ -149,64 +174,24 @@
                           // a setListener directive has to be sent to register or 
                           // unregister the placeholder from listeners
                           // previously set listeners will be changed as per options received
-                          l("setting up listener for " + selector); 
-                          if (listeners[selector]){
+                          l("setting up listener for " + placeholder); 
+                          if (listeners[placeholder]){
                             // options from earlier are preserved
-                            $.extend(listeners[selector], options);
+                            $.extend(listeners[placeholder], options);
                           } else {
-                            listeners[selector] = options;
+                            listeners[placeholder] = options;
                           }
                         }
                         var searchOpts = $.extend({}, options);
                         delete searchOpts.template;
                         delete searchOpts.setListener;
-                        this.search(searchOpts, function(results){
-                          render(template, results, selector);
+                        this.search(searchOpts, function(doc){
+                          render(doc, {
+                            "template":   template,
+                            "placeholder":   placeholder
+                          });
                         });
                         return this;
-                      },
-    search:           function(options, callback){
-                        var that = this;
-                        // TODO: use lazy fetching (docs pulled in bulk)
-                        // no repeated _ids please (as is the case in item search
-                        // when a word has a non-adjacent repeated letter)
-                        if (!options || !options.view || !options.type){
-                          throw("incomplete options parameter to search");
-                        }
-                        var docs = [];
-                        var viewOpts = $.extend({}, options);
-                        var view = viewOpts.view;
-                        delete viewOpts.view;
-                        // ISSUE: default include_docs? i think yes
-                        viewOpts.include_docs = viewOpts.include_docs || true; 
-                        if (options.type === "item"){
-                          db.view(view, $.extend(viewOpts, {
-                            success: function(data){ 
-                                       l("item query returned successfully with " + 
-                                         data.rows.length + " items");
-                                       docs = data.rows.map(function(row){ return row.doc; });
-                                       callback(docs);
-                                     }
-                          }));
-                        } else if (options.type === "relation"){
-                          viewOpts.recursive = viewOpts.recursive || true;
-                          
-                          db.view(view, $.extend(viewOpts, {
-                            success: function(data){
-                                       l("relation query returned successfully with " + 
-                                           data.rows.length + " relations");
-                                       docs = data.rows.map(function(row){ 
-                                         return row.doc; 
-                                       });
-                                       callback(docs);
-                                       //if (viewOpts.recursive) {
-                                         //docs.map(function(d){
-                                           //return getRecursively(d, viewOpts.level_deep);
-                                         //});
-                                       //}
-                                     }
-                          }));
-                        }
                       },
     deleteItem:       function(doc, options){
                         var that = this;
@@ -276,7 +261,6 @@
                         select();
                         if (selectedItems.length >= 3){
                           l("subject, predicate and object selected, making relation");
-                          console.log(selectedItems);
                           db.saveDoc({
                             "type":       "relation",
                             "subject":    selectedItems[0]._id,
@@ -307,7 +291,7 @@
                         //},
     setupLogin:       function(loginOptions, loggedIn, loggedOut){
                         // ISSUE: Ok with loggedIn/loggedOut having to return dom 
-                        // elements to put click handlers on in here?
+                        // element to put click handlers on?
                         loginOptions = loginOptions || {};
                         var loginData = loginOptions.loginData || 
                                         {"name": "_", "password": "_"};
