@@ -58,12 +58,14 @@
                         }
                       },
     doc:              function(id, callback, forceFetch){
+                        var that = this;
                         if (cache.find(id) && !forceFetch){
                           callback(cache.get(id));
                         } else {
                           db.openDoc(id, {
                             success: function(doc){
-                                       cache.set(id, doc);
+                                       cache.remove(id);
+                                       cache.put(id, doc);
                                        callback(doc);
                                      }
                           });
@@ -136,6 +138,7 @@
                           for (var placeholder in listeners){
                             if (listeners[placeholder].setListener){
                               // don't touch the placeholders that have been unregistered
+                              $(placeholder).empty();
                               var options = $.extend(
                                   { "placeholder": placeholder },
                                   listeners[placeholder]
