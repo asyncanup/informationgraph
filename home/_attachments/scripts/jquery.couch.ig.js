@@ -15,12 +15,45 @@
   //    template - what jquery template to use for data display
   //    and other options to pass on as is to db.view (like query parameters), success/error handlers
   // should not have a field called listener
+  var defaultCallback = function(whatever){ 
+    l("argument to defaultCallback: " + whatever); 
+  }
+  var refreshDoc = function(doc){
+    // the default do-nothing refresh handler 
+    // (called for every document in _changes)
+    l("default refreshDoc called with " + doc);
+  }
+  function setDefault(arg, v){
+    return (typeof(arg) === "undefined") ? v : arg;
+  }
   function l(val) { 
     if ( window.console && debugMode ) { console.log("ig: " + val); } 
     // if it is desired to log objects, they must first be JSON.stringify'ed
   }
   function timestamp(){
     return (new Date()).getTime();
+  }
+  function couchDoc(doc){
+    // takes a doc from cache and returns its couchdb json
+    var d = $.extend({}, doc);
+    delete d.toString;
+    if (doc.type === "item"){
+      return d;
+    } else if (doc.type === "relation"){
+      d.subject = d.subject._id;
+      d.predicate = d.predicate._id;
+      d.object = d.object._id;
+      return d;
+    }
+  }
+  function require(arg, msg){
+    if (typeof(arg) === "undefined"){
+      if (msg){
+        throw(msg);
+      } else {
+        throw("incomplete parameters");
+      }
+    }
   }
 
   $.extend($.ig, {
@@ -40,6 +73,7 @@
                           l("db set to " + dbname);
                           hose = db.changes();
                           hose.onChange(function(feed){
+                            l("received _changes");
                             feed.results.forEach(function(d){
                               if (cache.find(d.id)){
                                 if (d.deleted){
@@ -48,10 +82,9 @@
                                   ig.refresh({ "_id": d.id,  "_deleted": true });
                                 } else {
                                   ig.doc(d.id, function(doc){
-                                    l(doc._id + " updated");
+                                    l(doc + " updated");
                                     ig.refresh(doc);
                                   }, true);
-                                  ig.refresh(doc);
                                 }
                               }
                             });
@@ -65,23 +98,53 @@
     getListeners:     function(){ 
                         return listeners; 
                       },
+    getCache:         function(){
+                        return cache;
+                      },
     doc:              function(id, callback, forceFetch){
+                        require(id, "no id specified to ig.doc! unforgivable");
+                        require(callback, "no callback to ig.doc, what a shame");
                         if (!forceFetch && cache.find(id)){
                           callback(cache.get(id));
                         } else {
+                          l("loading item from db");
                           db.openDoc(id, {
-                            success: function(doc){
-                                       cache.remove(id);
-                                       cache.put(id, doc);
-                                       callback(doc);
+                            success: function(d){
+                                         if(d.type === "item"){
+                                           d.toString = function(){ return this.value; }
+                                           cache.remove(d._id);
+                                           cache.put(d._id, d);
+                                           l("item loaded: " + d);
+                                           callback(d);
+                                         } else if (d.type === "relation"){
+                                           ig.doc(d.subject, function(subject){
+                                             ig.doc(d.predicate, function(predicate){
+                                               ig.doc(d.object, function(object){
+                                                 d.subject = subject;
+                                                 d.predicate = predicate;
+                                                 d.object = object;
+                                                 d.toString = function(){
+                                                   return "( " + 
+                                                            this.subject + " - " + 
+                                                            this.predicate + " - " + 
+                                                            this.object + 
+                                                          " )";
+                                                 };
+                                                 cache.remove(d._id);
+                                                 cache.put(d._id, d);
+                                                 l("relation loaded: " + d);
+                                                 callback(d);
+                                               });
+                                             });
+                                           });
+                                         }
                                      }
                           });
                         }
                       },
     search:           function(view, query, callback){
-                        if (!view || !callback){
-                          throw("incomplete options parameter to search");
-                        }
+                        require(view, "search needs view");
+                        require(callback, "search needs callback");
                         db.view(view, $.extend({}, query, {
                           success: function(data){ 
                                      l("search query returned successfully with " + 
@@ -98,6 +161,7 @@
                         l(text);
                       },
     notification:     function(func){
+                        require(func, "gui notification handler not specified");
                         ig.notify = function(text){
                           l(text);
                           func(text);
@@ -108,19 +172,14 @@
     refresh:          function(arg){
                         // only details with refreshing the UI
                         // arg can be a function or doc or nothing
-                        var refreshDoc = function(doc){
-                          // the default do-nothing refresh handler 
-                          // (called for every document in _changes)
-                          l(JSON.stringify(doc));
-                        }
                         if (arg){
-                          if (typeof arg === "function"){
+                          if (typeof(arg) === "function"){
                             refreshDoc = arg;
-                            l("refresh handler set");
+                            l("refreshDoc set");
                           } else {
                             // doc
+                            l("refreshDoc(" + arg + ")");
                             refreshDoc(arg);
-                            l("refreshing " + arg._id);
                           }
                         } else {
                           // no argument passed
@@ -129,7 +188,7 @@
                             var query = options.query;
                             var render = options.render;
                             var view = options.view;
-                            l("refreshing " + placeholder);
+                            l("refreshing placeholder: " + placeholder);
                             if (options.beforeRender){
                               options.beforeRender();
                             }
@@ -141,14 +200,13 @@
                         return ig;
                       },
     linkPlaceholder:  function(placeholder, options){
-                        if (!placeholder || 
-                            !options ||
-                            !options.render ||
-                            !options.view){
-                          throw("incomplete parameters to linkPlaceholder");
-                        }
-                        l("linking " + placeholder + " to " + options.view);
+                        require(placeholder, "linkPlaceholder needs placeholder");
+                        require(options, "linkPlaceholder needs options parameter");
+                        require(options.render, "linkPlaceholder needs options.render");
+                        require(options.view, "linkPlaceholder needs options.view");
+
                         listeners[placeholder] = options;
+                        l("linked " + placeholder + " to " + options.view);
                         return ig;
                       },
     unlinkPlaceholder:function(placeholder){
@@ -156,13 +214,14 @@
                         return ig;
                       },
     unlinkAll:        function(){ 
-                        l("cleared all placeholder listeners!"); 
                         listeners = {}; 
+                        l("cleared all placeholder listeners!"); 
                         return ig;
                       },
-    newItem:          function(val){
+    newItem:          function(val, whenSaved){
+                        whenSaved = setDefault(whenSaved, defaultCallback);
                         val = shortenItem(val, { "onlyTrim": true });
-                        var isSaved = false;
+                        if (!val){ throw("empty value"); }
                         db.saveDoc({
                           "type":   "item",
                           // trim, remove repeated whitespace in value string
@@ -171,119 +230,108 @@
                           "created_at": timestamp()
                         }, {
                           success:  function(data){
-                                      isSaved = true;
                                       l("saved new item");
-                                      ig.notify({
-                                        "action": "Created",
-                                        "data": val
+                                      ig.doc(data.id, function(doc){
+                                        ig.notify("Created: " + doc);
+                                        whenSaved(doc);
                                       });
                                     }
                         });
-                        return isSaved;
                       },
-    deleteItem:       function(doc, options){
-                        options = options || {};
-                        l("deleting item '" + doc.value + "'");
-                        db.removeDoc(
-                            doc,
-                            $.extend({ 
-                              success: function(data){
-                                         l("deleted item");
-                                         ig.notify({
-                                           "action": "Deleted",
-                                           "data": doc.value
-                                         });
-                                       }
-                            }, options)
-                        );
-                      },
-    editItem:         function(doc, options){
-                        options = options || {};
-
-                        doc.updated_at = timestamp();
-                        l("saving item with new value '" + doc.value + "'");
-                        db.saveDoc(doc, 
-                            $.extend({
-                              success:  function(data){
-                                          l("saved edited document, notifying app");
-                                          // now refresh the relevant view results
-                                          ig.notify({
-                                            "action": "Edited",
-                                            "data": doc.value
-                                          });
-                                        }
-                            }, options) );
-                      },
-    selectItem:       function(doc, toggleGui){
-                        // NOTE: that there is no options parameter here even though a 
-                        // db.saveDoc query is being made in the function
-                        function select(){
-                          l("selecting item '" + doc.value + "'");
-                          selectedItems.push(doc);
-                          toggleGui(selectedItems.length);
-                        }
-                        function unselect(){
-                          l("unselecting '" + doc.value + "'");
-                          selectedItems.pop();
-                          toggleGui(selectedItems.length);
-                        }
-                        if (doc._id && selectedItems.length !== 0){
-                          if (doc._id === selectedItems[selectedItems.length - 1]._id){
-                            // note: checking only for _id. good with it?
-                            unselect();
-                            return ig;
-                          } else {
-                            // checking if the received item is not already selected
-                            // (except for the case when it was the last seleted item,
-                            // which has been handled above)
-                            selectedItems.forEach(function(item){
-                              if (item._id === doc._id){
-                                throw("item already selected");
-                              }
-                            });
-                          }
-                        }
-                        select();
-                        if (selectedItems.length >= 3){
-                          l("subject, predicate and object selected, making relation");
-                          db.saveDoc({
-                            "type":       "relation",
-                            "subject":    selectedItems[0]._id,
-                            "predicate":  selectedItems[1]._id,
-                            "object":     selectedItems[2]._id,
-                            "created_at": timestamp()
-                          }, $.extend({
-                            success: function(d){
-                                       l("relation saved");
-                                       var relationText = selectedItems
-                                                            .map(function(item){ 
-                                                              return item.value; 
-                                                            }).join(" - ");
-                                       selectedItems = [];
-                                       ig.notify({
-                                         "action": "Created",
-                                         "data": relationText
+    deleteDoc:        function(id, whenDeleted){
+                        whenDeleted = setDefault(whenDeleted, defaultCallback);
+                        require(id, "deleteDoc needs id");
+                        ig.doc(id, function(doc){
+                          var d = couchDoc(doc);
+                          l("deleting doc");
+                          db.removeDoc(d, { 
+                            success: function(data){
+                                       l("deleted item");
+                                       ig.doc(data.id, function(doc){
+                                         ig.notify("Deleted: " + doc);
+                                         whenDeleted(doc);
                                        });
                                      }
-                          }, {})); // because there are no options parameters
-                        }
+                          });
+                        });
                       },
-    // This leaves the gui for selected items as it is. Not cool.
-    //clearSelectedItems: function(){
-                          //l("clearing item selection for new relation");
-
-                          //selectedItems = [];
-                        //},
+    editItem:         function(id, newVal, whenSaved){
+                        whenSaved = setDefault(whenSaved, defaultCallback);
+                        require(id, "editItem needs id");
+                        ig.doc(id, function(doc){
+                          var d = couchDoc(doc);
+                          d.value = newVal;
+                          d.updated_at = timestamp();
+                          l("saving item with new value '" + doc.value + "'");
+                          db.saveDoc(d, {
+                            success:  function(data){
+                                        l("saved edited document, notifying app");
+                                        ig.doc(data.id, function(doc){
+                                          ig.notify("Edited: " + doc);
+                                          whenSaved(doc);
+                                        });
+                                      }
+                          });
+                        });
+                      },
+    selectDoc:        function(id, toggleGui){
+                        require(id, "selectDoc needs id");
+                        require(toggleGui, "selectDoc needs toggleGui");
+                        ig.doc(id, function(doc){
+                          function select(){
+                            l("selecting: " + doc);
+                            selectedItems.push(doc);
+                            toggleGui(selectedItems.length);
+                          }
+                          function unselect(){
+                            l("unselecting:" + doc);
+                            selectedItems.pop();
+                            toggleGui(selectedItems.length);
+                          }
+                          if (doc._id && selectedItems.length !== 0){
+                            if (doc._id === selectedItems[selectedItems.length - 1]._id){
+                              unselect();
+                              return ig;
+                            } else {
+                              // checking if the received item is not already selected
+                              // (except for the case when it was the last seleted item,
+                              // which has been handled above)
+                              selectedItems.forEach(function(item){
+                                if (item._id === doc._id){
+                                  throw("item already selected");
+                                }
+                              });
+                            }
+                          }
+                          select();
+                          if (selectedItems.length >= 3){
+                            l("subject, predicate and object selected, making relation");
+                            db.saveDoc({
+                              "type":       "relation",
+                              "subject":    selectedItems[0]._id,
+                              "predicate":  selectedItems[1]._id,
+                              "object":     selectedItems[2]._id,
+                              "created_at": timestamp()
+                            }, {
+                              success: function(data){
+                                         selectedItems = [];
+                                         ig.doc(data.id, function(doc){
+                                           ig.notify("Created: " + doc);
+                                         });
+                                       }
+                            });
+                          }
+                        });
+                      },
     setupLogin:       function(loginOptions, loggedIn, loggedOut){
                         // ISSUE: Ok with loggedIn/loggedOut having to return dom 
-                        // element to put click handlers on?
+                        // element to put click handler on?
                         loginOptions = loginOptions || {};
                         var loginData = loginOptions.loginData || 
                                         {"name": "_", "password": "_"};
 
-                        if (!loggedIn || !loggedOut){
-                          throw("missing login/logout success handler");
-                        }
+                        require(loggedIn, "setupLogin needs login handler");
+                        require(loggedOut, "setupLogin needs logout handler");
                         var login = function(){
                           l("Logging in");
                           $.couch.login($.extend(loginData, {success: loggedIn}));

@@ -41,16 +41,16 @@
 
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
-    <div rev="${_rev}" created_at="${created_at}" class="item ${_id}">
-      <div class="itemSelect" title="Select">-</div>
+    <div doc_id="${_id}" class="item">
+      <div class="docSelect" title="Select">-</div>
       <div class="itemValue" title="Double Click to edit">
         <span class="itemSearch" title="Click to search">${value}</span>
       </div> 
     </div>
   </script>
   <script id="itemEditTemplate" type="text/x-jquery-tmpl">
-    <div rev="${_rev}" created_at="${created_at}" originalValue="${value}" class="item ${_id}">
-      <div class="itemDelete" title="Delete Item">x</div>
+    <div doc_id="${_id}" originalValue="${value}" class="item">
+      <div class="docDelete" title="Delete Item">x</div>
       <div class="itemEdit">
         <form class="itemEditForm">
           <input class="itemInput" title="Enter new value" value="${value}"/>
@@ -59,7 +59,7 @@
     </div>
   </script>
   <script id="relationListTemplate" type="text/x-jquery-tmpl">
-    <tr id="${_id}" rev="${_rev}" created_at="${created_at}" class="relation">
+    <tr doc_id="${_id}" class="relation">
       <td class="subject">${subject}</td>
       <td class="predicate">${predicate}</td>
       <td class="object">${object}</td>
