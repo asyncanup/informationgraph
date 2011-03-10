@@ -1,5 +1,6 @@
 (function($) {
   $.ig = $.ig || {};
+  var ig = $.ig;
 
   var db;
   var debugMode = true; // whether debug mode is on
@@ -28,38 +29,44 @@
                         if (cmd){
                           debugMode = (cmd === "stop") ? false : true;
                           l("debug mode on");
-                          return this;
+                          return ig;
                         } else {
                           return debugMode;
                         }
                       },
     database:         function(dbname){ 
-                        var that = this;
                         if (dbname) {
                           db = $.couch.db(dbname);
                           l("db set to " + dbname);
                           hose = db.changes();
                           hose.onChange(function(feed){
                             feed.results.forEach(function(d){
-                              if (d.deleted){
-                                cache.remove(d.id);
-                                l(d.id + " deleted");
-                                return;
+                              if (cache.find(d.id)){
+                                if (d.deleted){
+                                  cache.remove(d.id);
+                                  l(d.id + " deleted");
+                                  ig.refresh({ "_id": d.id,  "_deleted": true });
+                                } else {
+                                  ig.doc(d.id, function(doc){
+                                    l(doc._id + " updated");
+                                    ig.refresh(doc);
+                                  }, true);
+                                  ig.refresh(doc);
+                                }
                               }
-                              that.doc(d.id, function(doc){
-                                l(doc._id + " updated");
-                              }, true);
                             });
                           });
-                          l("hose set up");
-                          return that;
+                          l("_changes feed set up");
+                          return ig;
                         } else {
                           return db; 
                         }
                       },
+    getListeners:     function(){ 
+                        return listeners; 
+                      },
     doc:              function(id, callback, forceFetch){
-                        var that = this;
-                        if (cache.find(id) && !forceFetch){
+                        if (!forceFetch && cache.find(id)){
                           callback(cache.get(id));
                         } else {
                           db.openDoc(id, {
@@ -71,90 +78,89 @@
                           });
                         }
                       },
-    render:           function(doc, options){
-                        l("rendering '" + doc.value + "' in " + options.placeholder);
-                        if (!options || !options.template || !options.placeholder) {
-                          throw("incomplete options to render"); 
-                        }
-                        $(options.template).tmpl(doc).appendTo(options.placeholder);
-                      },
-    search:           function(options, callback){
-                        var that = this;
-                        if (!options || !options.view || !options.type){
+    search:           function(view, query, callback){
+                        if (!view || !callback){
                           throw("incomplete options parameter to search");
                         }
-                        var viewOpts = $.extend({}, options);
-                        var view = viewOpts.view;
-                        var type = viewOpts.type;
-                        delete viewOpts.view;
-                        delete viewOpts.type;
-                        viewOpts.include_docs = false; 
-                        // NOTE: setting include_docs=true, hence, has no effect
-                        db.view(view, $.extend(viewOpts, {
+                        db.view(view, $.extend({}, query, {
                           success: function(data){ 
                                      l("search query returned successfully with " + 
-                                         data.rows.length + " items");
+                                         data.rows.length + " rows");
                                      data.rows.forEach(function(row){
-                                       that.doc(row.id, function(doc){
+                                       ig.doc(row.id, function(doc){
                                          callback(doc);
                                        });
                                      });
                                    }
                         }));
                       },
-    notification:     function(func){
-                        notifyUI = func;
-                        return this;
+    notify:           function(text){
+                        l(text);
                       },
-    notify:           function(content){
-                        // at every trigger of this function,
-                        // all registered view query listeners will be fired and refreshed
-                        var that = this;
-                        if (content){
-                          l("triggering GUI notification");
-                          var text =  content.action.toString() +
-                                      ": '" +
-                                      content.data.toString() +
-                                      "'";
-                          // use of toString() is contentious, think about it. remove?
+    notification:     function(func){
+                        ig.notify = function(text){
                           l(text);
-                          notifyUI(text);
-                          if ($.inArray(content.action, 
-                                ["Created", "Deleted", "Edited"]) !== -1){
-                            that.refreshViewResults();
+                          func(text);
+                        }
+                        l("notification handler set up");
+                        return ig;
+                      },
+    refresh:          function(arg){
+                        // only details with refreshing the UI
+                        // arg can be a function or doc or nothing
+                        var refreshDoc = function(doc){
+                          // the default do-nothing refresh handler 
+                          // (called for every document in _changes)
+                          l(JSON.stringify(doc));
+                        }
+                        if (arg){
+                          if (typeof arg === "function"){
+                            refreshDoc = arg;
+                            l("refresh handler set");
+                          } else {
+                            // doc
+                            refreshDoc(arg);
+                            l("refreshing " + arg._id);
+                          }
+                        } else {
+                          // no argument passed
+                          for (var placeholder in listeners){
+                            var options = listeners[placeholder];
+                            var query = options.query;
+                            var render = options.render;
+                            var view = options.view;
+                            l("refreshing " + placeholder);
+                            if (options.beforeRender){
+                              options.beforeRender();
+                            }
+                            ig.search(view, query, function(doc){
+                              render(doc);
+                            });
                           }
                         }
+                        return ig;
                       },
-    refreshViewResults: function(){
-                          var that = this;
-                          // TODO: make this the function that gets called every few secs
-                          // it will ask for revision values of all registered items, ie, 
-                          // those cached by this app except for the ones belonging to 
-                          // placeholders with setListener set to false. Then get the full docs 
-                          // for those items that require refreshing and cache them.
-                          l("refreshing view results");
-
-                          selectedItems = [];
-                          for (var placeholder in listeners){
-                            if (listeners[placeholder].setListener){
-                              // don't touch the placeholders that have been unregistered
-                              $(placeholder).empty();
-                              var options = $.extend(
-                                  { "placeholder": placeholder },
-                                  listeners[placeholder]
-                                  );
-                              that.showViewResults(options);
-                            }
-                          }
-                        },
-    getListeners:     function(){ 
-                        return listeners; 
+    linkPlaceholder:  function(placeholder, options){
+                        if (!placeholder || 
+                            !options ||
+                            !options.render ||
+                            !options.view){
+                          throw("incomplete parameters to linkPlaceholder");
+                        }
+                        l("linking " + placeholder + " to " + options.view);
+                        listeners[placeholder] = options;
+                        return ig;
                       },
-    clearListeners:   function(){ 
-                        l("cleared all listeners!"); listeners = {}; 
+    unlinkPlaceholder:function(placeholder){
+                        delete listeners[placeholder];
+                        return ig;
+                      },
+    unlinkAll:        function(){ 
+                        l("cleared all placeholder listeners!"); 
+                        listeners = {}; 
+                        return ig;
                       },
     newItem:          function(val){
-                        var that = this;
                         val = shortenItem(val, { "onlyTrim": true });
                         var isSaved = false;
                         db.saveDoc({
@@ -167,7 +173,7 @@
                           success:  function(data){
                                       isSaved = true;
                                       l("saved new item");
-                                      that.notify({
+                                      ig.notify({
                                         "action": "Created",
                                         "data": val
                                       });
@@ -175,46 +181,7 @@
                         });
                         return isSaved;
                       },
-    showViewResults:  function(options){
-                        // TODO: do not query db, just use values from cache
-                        var that = this;
-                        if (!options || !options.template || !options.placeholder){
-                          throw("incomplete options parameter to showViewResults");
-                        }
-                        l("showing view results"); 
-                        options = options || {};
-                        var placeholder = options.placeholder;
-                        var template = options.template;
-                        if (options.empty) {
-                          $(placeholder).empty();
-                        }
-                        delete options.placeholder;
-
-                        if (typeof options.setListener !== 'undefined'){
-                          // a setListener directive has to be sent to register or 
-                          // unregister the placeholder from listeners
-                          // previously set listeners will be changed as per options received
-                          l("setting up listener for " + placeholder); 
-                          if (listeners[placeholder]){
-                            // options from earlier are preserved
-                            $.extend(listeners[placeholder], options);
-                          } else {
-                            listeners[placeholder] = options;
-                          }
-                        }
-                        var searchOpts = $.extend({}, options);
-                        delete searchOpts.template;
-                        delete searchOpts.setListener;
-                        that.search(searchOpts, function(doc){
-                          that.render(doc, {
-                            "template":   template,
-                            "placeholder":   placeholder
-                          });
-                        });
-                        return this;
-                      },
     deleteItem:       function(doc, options){
-                        var that = this;
                         options = options || {};
                         l("deleting item '" + doc.value + "'");
                         db.removeDoc(
@@ -222,7 +189,7 @@
                             $.extend({ 
                               success: function(data){
                                          l("deleted item");
-                                         that.notify({
+                                         ig.notify({
                                            "action": "Deleted",
                                            "data": doc.value
                                          });
@@ -231,7 +198,6 @@
                         );
                       },
     editItem:         function(doc, options){
-                        var that = this;
                         options = options || {};
 
                         doc.updated_at = timestamp();
@@ -241,7 +207,7 @@
                               success:  function(data){
                                           l("saved edited document, notifying app");
                                           // now refresh the relevant view results
-                                          that.notify({
+                                          ig.notify({
                                             "action": "Edited",
                                             "data": doc.value
                                           });
@@ -251,7 +217,6 @@
     selectItem:       function(doc, toggleGui){
                         // NOTE: that there is no options parameter here even though a 
                         // db.saveDoc query is being made in the function
-                        var that = this;
                         function select(){
                           l("selecting item '" + doc.value + "'");
                           selectedItems.push(doc);
@@ -266,7 +231,7 @@
                           if (doc._id === selectedItems[selectedItems.length - 1]._id){
                             // note: checking only for _id. good with it?
                             unselect();
-                            return that;
+                            return ig;
                           } else {
                             // checking if the received item is not already selected
                             // (except for the case when it was the last seleted item,
@@ -295,7 +260,7 @@
                                                               return item.value; 
                                                             }).join(" - ");
                                        selectedItems = [];
-                                       that.notify({
+                                       ig.notify({
                                          "action": "Created",
                                          "data": relationText
                                        });
@@ -342,7 +307,7 @@
                                      }
                                    }
                         });
-                        return this;
+                        return ig;
                       }
   });
 })(jQuery);
