@@ -40,9 +40,9 @@
     if (doc.type === "item"){
       return d;
     } else if (doc.type === "relation"){
-      d.subject = d.subject._id;
-      d.predicate = d.predicate._id;
-      d.object = d.object._id;
+      delete d.getSubject();
+      delete d.getPredicate();
+      delete d.getObject();
       return d;
     }
   }
@@ -120,14 +120,24 @@
                                            ig.doc(d.subject, function(subject){
                                              ig.doc(d.predicate, function(predicate){
                                                ig.doc(d.object, function(object){
-                                                 d.subject = subject;
-                                                 d.predicate = predicate;
-                                                 d.object = object;
+                                                 d.getSubject = function(){
+                                                     // note that this will return undefined
+                                                     // if subject of a relation has been 
+                                                     // changed without loading the new 
+                                                     // subject doc in cache.
+                                                     return cache.get(d.subject);
+                                                 };
+                                                 d.getPredicate = function(){
+                                                     return cache.get(d.predicate);
+                                                 };
+                                                 d.getObject = function(){
+                                                     return cache.get(d.object);
+                                                 };
                                                  d.toString = function(){
                                                    return "( " + 
-                                                            this.subject + " - " + 
-                                                            this.predicate + " - " + 
-                                                            this.object + 
+                                                            this.getSubject() + " - " + 
+                                                            this.getPredicate() + " - " + 
+                                                            this.getObject() + 
                                                           " )";
                                                  };
                                                  cache.remove(d._id);
