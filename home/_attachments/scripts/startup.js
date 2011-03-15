@@ -1,5 +1,6 @@
 $(document).ready(function(){
 
+  // TODO: item values not refreshing in #itemList
   var ig = $.ig;
 
   // NOTE: Extending JQuery in this statement

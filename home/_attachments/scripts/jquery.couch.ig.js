@@ -40,9 +40,9 @@
     if (doc.type === "item"){
       return d;
     } else if (doc.type === "relation"){
-      delete d.getSubject();
-      delete d.getPredicate();
-      delete d.getObject();
+      delete d.getSubject;
+      delete d.getPredicate;
+      delete d.getObject;
       return d;
     }
   }
