@@ -18,21 +18,36 @@
   var defaultCallback = function(whatever){ 
     l("argument to defaultCallback: " + whatever); 
   }
+
   var refreshDoc = function(doc){
     // the default do-nothing refresh handler 
     // (called for every document in _changes)
     l("default refreshDoc called with " + doc);
   }
+
+  var guiItemSelect = function(doc){
+    // the default do-nothing gui selection handler for items
+    l("default guiItemSelect called with " + doc);
+  }
+
+  var guiItemUnSelect = function(doc){
+    // the default do-nothing gui unselection handler for items
+    l("default guiItemUnSelect called with " + doc);
+  }
+
   function setDefault(arg, v){
     return (typeof(arg) === "undefined") ? v : arg;
   }
+
   function l(val) { 
     if ( window.console && debugMode ) { console.log("ig: " + val); } 
     // if it is desired to log objects, they must first be JSON.stringify'ed
   }
+  
   function timestamp(){
     return (new Date()).getTime();
   }
+
   function couchDoc(doc){
     // takes a doc from cache and returns its couchdb json
     var d = $.extend({}, doc);
@@ -46,6 +61,7 @@
       return d;
     }
   }
+
   function require(arg, msg){
     if (typeof(arg) === "undefined"){
       if (msg){
@@ -179,6 +195,13 @@
                         l("notification handler set up");
                         return ig;
                       },
+    itemSelection:    function(select, unselect){
+                        require(select, "gui item selection handler not specified");
+                        require(unselect, "gui item unselection handler not specified");
+                        guiItemSelect = select;
+                        guiItemUnSelect = unselect;
+                        return ig;
+                      },
     refresh:          function(arg){
                         // only details with refreshing the UI
                         // arg can be a function or doc or nothing
@@ -217,10 +240,12 @@
 
                         listeners[placeholder] = options;
                         l("linked " + placeholder + " to " + options.view);
+                        ig.refresh(); // NOTE: contentious
                         return ig;
                       },
     unlinkPlaceholder:function(placeholder){
                         delete listeners[placeholder];
+                        ig.refresh(); // NOTE: contentious
                         return ig;
                       },
     unlinkAll:        function(){ 
@@ -257,46 +282,46 @@
                           db.removeDoc(d, { 
                             success: function(data){
                                        l("deleted item");
-                                       ig.doc(data.id, function(doc){
-                                         ig.notify("Deleted: " + doc);
+                                       ig.doc(data.id, function(docu){
+                                         ig.notify("Deleted: " + docu);
                                          whenDeleted(doc);
                                        });
                                      }
                           });
                         });
                       },
-    editItem:         function(id, newVal, whenSaved){
-                        whenSaved = setDefault(whenSaved, defaultCallback);
+    editItem:         function(id, newVal, whenEdited){
+                        whenEdited = setDefault(whenEdited, defaultCallback);
+                            // how about ifNot(whenEdited).then(defaultCallback)
                         require(id, "editItem needs id");
                         ig.doc(id, function(doc){
                           var d = couchDoc(doc);
                           d.value = newVal;
                           d.updated_at = timestamp();
-                          l("saving item with new value '" + doc.value + "'");
+                          l("saving item with new value '" + d.value + "'");
                           db.saveDoc(d, {
                             success:  function(data){
                                         l("saved edited document, notifying app");
-                                        ig.doc(data.id, function(doc){
-                                          ig.notify("Edited: " + doc);
-                                          whenSaved(doc);
+                                        ig.doc(data.id, function(item){
+                                          ig.notify("Edited: " + item);
+                                          whenEdited(doc);
                                         });
                                       }
                           });
                         });
                       },
-    selectDoc:        function(id, toggleGui){
+    selectDoc:        function(id){
                         require(id, "selectDoc needs id");
-                        require(toggleGui, "selectDoc needs toggleGui");
                         ig.doc(id, function(doc){
                           function select(){
-                            l("selecting: " + doc);
                             selectedItems.push(doc);
-                            toggleGui(selectedItems.length);
+                            l("selected: " + doc);
+                            guiItemSelect(doc, selectedItems.length);
                           }
                           function unselect(){
-                            l("unselecting:" + doc);
                             selectedItems.pop();
-                            toggleGui(selectedItems.length);
+                            l("unselected:" + doc);
+                            guiItemUnSelect(doc);
                           }
                           if (doc._id && selectedItems.length !== 0){
                             if (doc._id === selectedItems[selectedItems.length - 1]._id){
@@ -324,9 +349,12 @@
                               "created_at": timestamp()
                             }, {
                               success: function(data){
+                                         guiItemUnSelect(selectedItems[0]);
+                                         guiItemUnSelect(selectedItems[1]);
+                                         guiItemUnSelect(selectedItems[2]);
                                          selectedItems = [];
-                                         ig.doc(data.id, function(doc){
-                                           ig.notify("Created: " + doc);
+                                         ig.doc(data.id, function(relation){
+                                           ig.notify("Created: " + relation);
                                          });
                                        }
                             });

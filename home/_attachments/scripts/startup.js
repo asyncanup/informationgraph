@@ -64,6 +64,22 @@ $(document).ready(function(){
           }
         }
       })
+      .itemSelection(
+          function(doc, index){
+            var selectText = ["-", "s", "p", "o"];
+            findOnPage(doc)
+                .addClass("selected")
+                .find(".docSelect")
+                .text(selectText[index]);
+          }, 
+          function(doc){
+            var unSelectText = "-";
+            findOnPage(doc)
+                .removeClass("selected")
+                .find(".docSelect")
+                .text(unSelectText);
+          }
+      )
       .linkPlaceholder("#itemList", {
         "view":           "home/allItems",
         "beforeRender":   function(){ $("#itemList").empty(); },
@@ -97,30 +113,18 @@ $(document).ready(function(){
 
   $("#content")
     .delegate(".newItem", "submit", function(){
-      ig.newItem($(this.newItemValue).val(), function(){
+      ig.newItem($(this.newItemValue).val(), function(doc){
         // if and when saved
         $(this.newItemValue).val("");
         render(doc, "#itemList", "#itemTemplate");
+        // this line is needed for _changes to affect this doc
+        // otherwise ig.refresh would have to be run for every new item added
       });
       return false;
     })
     .delegate(".docSelect", "click", function(){
-      var elem = docElem(this);
-      var selectText = ["-", "s", "p", "o"];
-
-      // sending in a callback function to toggle gui of a selected or unselected item
-      ig.selectDoc(elem.attr("doc_id"), function(doc){ 
-        var elem = findOnPage(doc);
-        if (elem.hasClass("selected")){
-          elem.removeClass("selected")
-            .find(".docSelect")
-            .text(selectText[0]);
-        } else {
-          elem.addClass("selected")
-            .find(".docSelect")
-            .text(selectText[index]);
-        }
-      });
+      var e = docElem(this);
+      ig.selectDoc(e.attr("doc_id"));
       return false;
     })
     .delegate(".docDelete", "click", function(){

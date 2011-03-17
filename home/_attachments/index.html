@@ -59,11 +59,13 @@
     </div>
   </script>
   <script id="relationListTemplate" type="text/x-jquery-tmpl">
-    <tr doc_id="${_id}" class="relation">
-      <td class="subject">${subject}</td>
-      <td class="predicate">${predicate}</td>
-      <td class="object">${object}</td>
-    </tr>
+    <div doc_id="${_id}" class="relation">
+      <table><tr>
+        <td class="subject">{{tmpl(getSubject()) "#itemTemplate"}}</td>
+        <td class="predicate">{{tmpl(getPredicate()) "#itemTemplate"}}</td>
+        <td class="object">{{tmpl(getObject()) "#itemTemplate"}}</td>
+      </tr></table>
+    </div>
   </script>
   <script src="scripts/lru.js"></script>
   <script src="scripts/jquery.js"></script>

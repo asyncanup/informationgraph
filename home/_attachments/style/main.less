@@ -74,9 +74,6 @@ input {
 
 
 
-
-@item-line-height:    25px;
-
 @itemOption-width:    18px;
 @itemOption-padding:  2px;
 @itemOption-total-width: @itemOption-width + 2*@itemOption-padding;
@@ -85,7 +82,9 @@ input {
 @itemMain-padding:    5px;
 @itemMain-total-width: @itemMain-width + 2*@itemMain-padding;
 
-@sidebar-width:       @itemMain-total-width + @itemOption-total-width;
+@item-line-height:    25px;
+@item-width:          @itemMain-total-width + @itemOption-total-width;
+
 @sidebar-main-gap:    20px;
 
 .itemInput(@border:   1px solid gray, @focus-border: 1px solid black) {
@@ -169,13 +168,27 @@ input {
   }
 }
 
+/*.relation {*/
+  /*line-height:        @item-line-height;*/
+  /*width:              3*@item-width;*/
+  /*.subject {*/
+    /*float:            left;*/
+  /*}*/
+  /*.object {*/
+    /*float:            right;*/
+  /*}*/
+  /*.predicate {*/
+    /*margin-left:      @item-width;*/
+  /*}*/
+/*}*/
+
 #content {
   #sidebar {
     float:                  left;
     #itemFilter {
       .itemInput;
-      width:              @sidebar-width - 2*@default-input-padding;
-      margin-bottom:      3px;
+      width:                @item-width - 2*@default-input-padding;
+      margin-bottom:        3px;
       .border-radius;
     }
     .newItem {
@@ -190,7 +203,7 @@ input {
   #main {
     position:               relative;
     top:                    0;
-    margin-left:            @sidebar-width + @sidebar-main-gap;
+    margin-left:            @item-width + @sidebar-main-gap;
   }
 }
 
