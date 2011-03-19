@@ -1,6 +1,6 @@
 $(document).ready(function(){
 
-  // TODO: item values not refreshing in #itemList
+  // TODO: searching for an edited item doesn't work
   var ig = $.ig;
 
   // NOTE: Extending JQuery in this statement
@@ -60,7 +60,7 @@ $(document).ready(function(){
             findOnPage(doc).remove();
           }
           else { 
-            findOnPage(doc).replaceWith($("#" + doc.type + "Template").tmpl(doc)); 
+            findOnPage(doc).after($("#" + doc.type + "Template").tmpl(doc)).remove();
           }
         }
       })
