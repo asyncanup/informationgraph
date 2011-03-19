@@ -1,6 +1,6 @@
 $(document).ready(function(){
 
-  // TODO: make deleting possible only when no other docs depend on it
+  // TODO: make deleting possible only when no other docs depend on it. also, filtering not working
   var ig = $.ig;
 
   // NOTE: Extending JQuery in this statement
