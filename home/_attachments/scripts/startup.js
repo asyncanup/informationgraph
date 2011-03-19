@@ -1,6 +1,6 @@
 $(document).ready(function(){
 
-  // TODO: searching for an edited item doesn't work
+  // TODO: make deleting possible only when no other docs depend on it
   var ig = $.ig;
 
   // NOTE: Extending JQuery in this statement
@@ -59,8 +59,9 @@ $(document).ready(function(){
           if (doc._deleted){ 
             findOnPage(doc).remove();
           }
-          else { 
+          else {
             findOnPage(doc).after($("#" + doc.type + "Template").tmpl(doc)).remove();
+            $.tmplItem(findOnPage(doc)).data = doc;
           }
         }
       })
@@ -128,41 +129,41 @@ $(document).ready(function(){
       return false;
     })
     .delegate(".docDelete", "click", function(){
-      var elem = docElem(this);
-      ig.deleteDoc(elem.attr("doc_id")); 
+      var e = docElem(this);
+      ig.deleteDoc(e.attr("doc_id")); 
       // no callback needed here because ig.refresh(doc) is going to be 
       // called anyway when the _changes feed comes in
       return false;
     })
     .delegate(".itemValue", "dblclick", function(){
-      var tmplItem = $.tmplItem(this);
-      tmplItem.tmpl = $("#itemEditTemplate").template();
-      tmplItem.update();
-      $(tmplItem.nodes).find("input").focus();
-      // can i safely use tmplItem.nodes?
+      var e = docElem(this);
+      ig.doc(e.attr("doc_id"), function(doc){
+        e.after($("#itemEditTemplate").tmpl(doc)).remove();
+        findOnPage(doc).find("input:first").focus();
+      });
       return false;
     })
     .delegate(".itemSearch", "click", function(){
-      var doc = $.extend({}, $.tmplItem(this).data);
+      var e = docElem(this);
       $("#queryRelationList").empty();
       ig.search("home/relations", {
-        "startkey":   [doc._id],
-        "endkey":     [doc._id, {}]
+        "startkey":   [e.attr("doc_id")],
+        "endkey":     [e.attr("doc_id"), {}]
       }, function(relation){
         $("#relationListTemplate").tmpl(relation).appendTo("#queryRelationList");
       });
       return false;
     })
     .delegate(".itemEditForm", "submit", function(){
-      var elem = docElem(this);
+      var e = docElem(this);
       var input = $(this).find("input.itemInput");
       var val = shortenItem(input.val(), { "onlyTrim": true });
-      ig.editItem(elem.attr("doc_id"), val);
+      ig.editItem(e.attr("doc_id"), val);
       return false;
     });
 
 
-  ig.refresh();    
+  //ig.refresh();    
 
 });
 
