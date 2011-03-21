@@ -25,14 +25,14 @@
     l("default refreshDoc called with " + doc);
   }
 
-  var guiItemSelect = function(doc){
+  var guiDocSelect = function(doc){
     // the default do-nothing gui selection handler for items
-    l("default guiItemSelect called with " + doc);
+    l("default guiDocSelect called with " + doc);
   }
 
-  var guiItemUnSelect = function(doc){
+  var guiDocUnSelect = function(doc){
     // the default do-nothing gui unselection handler for items
-    l("default guiItemUnSelect called with " + doc);
+    l("default guiDocUnSelect called with " + doc);
   }
 
   function setDefault(arg, v){
@@ -169,12 +169,16 @@
                         }
                       },
     search:           function(view, query, callback){
+                        // calls callback with false if no results
                         require(view, "search needs view");
                         require(callback, "search needs callback");
                         db.view(view, $.extend({}, query, {
                           success: function(data){ 
                                      l("search query returned successfully with " + 
                                          data.rows.length + " rows");
+                                     if(data.rows.length === 0){
+                                       callback(false);
+                                     }
                                      data.rows.forEach(function(row){
                                        ig.doc(row.id, function(doc){
                                          callback(doc);
@@ -195,11 +199,11 @@
                         l("notification handler set up");
                         return ig;
                       },
-    itemSelection:    function(select, unselect){
-                        require(select, "gui item selection handler not specified");
-                        require(unselect, "gui item unselection handler not specified");
-                        guiItemSelect = select;
-                        guiItemUnSelect = unselect;
+    docSelection:     function(select, unselect){
+                        require(select, "gui selection handler not specified");
+                        require(unselect, "gui unselection handler not specified");
+                        guiDocSelect = select;
+                        guiDocUnSelect = unselect;
                         return ig;
                       },
     refresh:          function(arg){
@@ -211,7 +215,7 @@
                             l("refreshDoc set");
                           } else {
                             // doc
-                            l("refreshDoc(" + arg.id + ")");
+                            l("refreshDoc(" + arg + ")");
                             refreshDoc(arg);
                           }
                         } else {
@@ -226,7 +230,7 @@
                               options.beforeRender();
                             }
                             ig.search(view, query, function(doc){
-                              render(doc);
+                              if(doc) render(doc);
                             });
                           }
                         }
@@ -282,21 +286,25 @@
                             endkey:     [id, {}],
                             limit:      1
                           }, function(doc){
-                            throw("can't delete doc without deleting " + doc + " first.");
+                            if (doc === false){
+                              // search query returned no results
+                              ig.doc(id, function(doc){
+                                var d = couchDoc(doc);
+                                db.removeDoc(d, { 
+                                  success: function(data){
+                                             l("deleted " + doc);
+                                             ig.doc(data.id, function(docu){
+                                               ig.notify("Deleted: " + docu);
+                                               whenDeleted(doc);
+                                             });
+                                           }
+                                });
+                              });
+                            } else {
+                              l("delete dependent relations first: " + doc);
+                            }
                           });
                         }
-                        ig.doc(id, function(doc){
-                          var d = couchDoc(doc);
-                          db.removeDoc(d, { 
-                            success: function(data){
-                                       l("deleted " + doc);
-                                       ig.doc(data.id, function(docu){
-                                         ig.notify("Deleted: " + docu);
-                                         whenDeleted(doc);
-                                       });
-                                     }
-                          });
-                        });
                       },
     editItem:         function(id, newVal, whenEdited){
                         whenEdited = setDefault(whenEdited, defaultCallback);
@@ -324,12 +332,12 @@
                           function select(){
                             selectedItems.push(doc);
                             l("selected: " + doc);
-                            guiItemSelect(doc, selectedItems.length);
+                            guiDocSelect(doc, selectedItems.length);
                           }
                           function unselect(){
                             selectedItems.pop();
                             l("unselected:" + doc);
-                            guiItemUnSelect(doc);
+                            guiDocUnSelect(doc);
                           }
                           if (doc._id && selectedItems.length !== 0){
                             if (doc._id === selectedItems[selectedItems.length - 1]._id){
@@ -357,9 +365,9 @@
                               "created_at": timestamp()
                             }, {
                               success: function(data){
-                                         guiItemUnSelect(selectedItems[0]);
-                                         guiItemUnSelect(selectedItems[1]);
-                                         guiItemUnSelect(selectedItems[2]);
+                                         guiDocUnSelect(selectedItems[0]);
+                                         guiDocUnSelect(selectedItems[1]);
+                                         guiDocUnSelect(selectedItems[2]);
                                          selectedItems = [];
                                          ig.doc(data.id, function(relation){
                                            ig.notify("Created: " + relation);
@@ -402,6 +410,16 @@
                                    }
                         });
                         return ig;
+                      },
+    emptyDb:          function(){
+                        db.allDocs({
+                          include_docs: true,
+                          success:      function(data){
+                                          $.each(data.rows, function(i, row){
+                                            db.removeDoc(row.doc);
+                                          });
+                                        }
+                        });
                       }
   });
 })(jQuery);

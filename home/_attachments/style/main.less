@@ -74,16 +74,16 @@ input {
 
 
 
-@itemOption-width:    18px;
-@itemOption-padding:  2px;
-@itemOption-total-width: @itemOption-width + 2*@itemOption-padding;
+@spoOption-width:     18px;
+@spoOption-padding:   2px;
+@spoOption-total-width: @spoOption-width + 2*@spoOption-padding;
 
-@itemMain-width:      150px;
-@itemMain-padding:    8px;
-@itemMain-total-width: @itemMain-width + 2*@itemMain-padding;
+@spoMain-width:       150px;
+@spoMain-padding:     8px;
+@spoMain-total-width: @spoMain-width + 2*@spoMain-padding;
 
-@item-line-height:    25px;
-@item-width:          @itemMain-total-width + @itemOption-total-width;
+@spo-line-height:     25px;
+@spo-width:           @spoMain-total-width + @spoOption-total-width;
 
 @sidebar-main-gap:    20px;
 
@@ -98,11 +98,11 @@ input {
   }
 }
 
-/* For .itemSelect and .itemDelete */
-.itemOption(){
+/* For .docSelect and .docDelete */
+.spoOption(){
   cursor:           pointer;
-  padding:          0 @itemOption-padding;
-  width:            @itemOption-width;
+  padding:          0 @spoOption-padding;
+  width:            @spoOption-width;
   text-align:       center;
   color:            @light-primary-2;
   float:            right;
@@ -110,14 +110,14 @@ input {
 }
 
 /* For .itemValue and .itemEditForm input */
-.itemMain(){
-  margin-right:     @itemOption-total-width;
-  width:            @itemMain-width;
-  padding:          0 @itemMain-padding;
+.spoMain(){
+  margin-right:     @spoOption-total-width;
+  width:            @spoMain-width;
+  padding:          0 @spoMain-padding;
 }
 
-.item {
-  line-height:        @item-line-height;
+.spoStuff() {
+  line-height:        @spo-line-height;
   background-color:   @light-primary-2;
   border:             1px solid @dark-primary-2;
   &:hover {
@@ -126,26 +126,36 @@ input {
       color:          maroon;
     }
   }
+  .docSelect {
+    .spoOption;
+  }
+  .spoSearch {
+    .spoMain;
+    &:hover {
+      cursor:           pointer;
+      text-decoration:  underline;
+    }
+  }
+}
+.item {
+  .spoStuff;
   .itemValue {
-    .itemMain;
-    cursor:           default;
-    .itemSearch {
-      cursor:         pointer;
+    .spoMain;
+    cursor:             default;
+    .docSearch {
       &:hover {
-        text-decoration: underline;
+        cursor:           pointer;
+        text-decoration:  underline;
       }
     }
   }
-  .docSelect {
-    .itemOption;
-  }
   .itemEdit {
-    margin-right:     @itemOption-total-width;
+    margin-right:     @spoOption-total-width;
     .itemEditForm {
       input {
         .itemInput(0, 0);
-        .itemMain;
-        height:             @item-line-height - 1;
+        .spoMain;
+        height:             @spo-line-height - 1;
         margin-right:       0;
         background-color:   white;
         &:hover {
@@ -155,10 +165,13 @@ input {
     }
   }
   .docDelete {
-    .itemOption;
+    .spoOption;
   }
 }
-.selected {
+.spo {
+  .spoStuff;
+}
+.selected() {
   background-color:   @secondary;
   &:hover {
     background-color: @secondary;
@@ -167,9 +180,38 @@ input {
     color:            maroon;
   }
 }
+.itemSelected {
+  .selected;
+}
+.spoSelected {
+  .selected;
+}
+.relationSelected {
+  .relationSelectButton {
+    background-color:       maroon;
+    color:                  @light-secondary-2;
+  }
+}
 
 .relation {
-  padding-bottom:     10px;
+  table {
+    margin:                 auto;
+  }
+  padding:                  5px;
+  .relationSelect {
+    vertical-align:         middle;
+    .relationSelectButton {
+      .border-radius(9px);
+      border:                 1px solid gray;
+      background-color:       @light-secondary-2;
+      color:                  maroon;
+      cursor:                 pointer;
+      height:                 17px;
+      margin:                 0 5px;
+      text-align:             center;
+      width:                  @spoOption-width;
+    }
+  }
 }
 
 #content {
@@ -177,7 +219,7 @@ input {
     float:                  left;
     #itemFilter {
       .itemInput;
-      width:                @item-width - 2*@default-input-padding;
+      width:                @spo-width - 2*@default-input-padding;
       margin-bottom:        3px;
       .border-radius;
     }
@@ -185,7 +227,7 @@ input {
       input {
         .itemInput;
         .border-radius;
-        width:              @itemMain-total-width - 2*@default-input-padding;
+        width:              @spoMain-total-width - 2*@default-input-padding;
         margin-top:         2px;
       }
     }
@@ -193,7 +235,7 @@ input {
   #main {
     position:               relative;
     top:                    0;
-    margin-left:            @item-width + @sidebar-main-gap;
+    margin-left:            @spo-width + @sidebar-main-gap;
   }
 }
 

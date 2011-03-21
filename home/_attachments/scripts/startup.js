@@ -32,6 +32,18 @@ $(document).ready(function(){
       throw("document not on page");
     }
   }
+  function elemType(e){
+    var types = ["item", "spo", "relation"];
+    var t;
+    $.each(types, function(i, type){
+      if (e.hasClass(type)){
+        t = type;
+        return false;
+      }
+    });
+    if (t){ return t; }
+    else { throw("element type none out of " + types.join("/")); }
+  }
 
   ig.debug("start")
       .database("informationgraph")
@@ -58,27 +70,36 @@ $(document).ready(function(){
         if (onPage(doc)){
           if (doc._deleted){ 
             findOnPage(doc).remove();
+            // what if a doc part of a relation is removed by this (as far as i can tell, it won't)
           }
           else {
-            findOnPage(doc).after($("#" + doc.type + "Template").tmpl(doc)).remove();
-            $.tmplItem(findOnPage(doc)).data = doc;
+            findOnPage(doc).each(function(i, e){
+              e = $(e);
+              e.after($("#" + elemType(e) + "Template").tmpl(doc)).remove();
+              $.tmplItem(e).data = doc;
+            });
           }
         }
       })
-      .itemSelection(
+      .docSelection(
           function(doc, index){
             var selectText = ["-", "s", "p", "o"];
-            findOnPage(doc)
-                .addClass("selected")
-                .find(".docSelect")
+            findOnPage(doc).each(function(i, e){
+              e = $(e);
+              e .addClass(elemType(e) + "Selected")
+                .find(".docSelect:last") 
+                // last because otherwise a relation's subject's docSelect might be chosen
                 .text(selectText[index]);
+            });
           }, 
           function(doc){
             var unSelectText = "-";
-            findOnPage(doc)
-                .removeClass("selected")
-                .find(".docSelect")
+            findOnPage(doc).each(function(i, e){
+              e = $(e);
+              e .removeClass(elemType(e) + "Selected")
+                .find(".docSelect:last")
                 .text(unSelectText);
+            });
           }
       )
       .linkPlaceholder("#itemList", {
@@ -144,14 +165,14 @@ $(document).ready(function(){
       });
       return false;
     })
-    .delegate(".itemSearch", "click", function(){
+    .delegate(".docSearch", "click", function(){
       var e = docElem(this);
       $("#queryRelationList").empty();
       ig.search("home/relations", {
         "startkey":   [e.attr("doc_id")],
         "endkey":     [e.attr("doc_id"), {}]
       }, function(relation){
-        $("#relationListTemplate").tmpl(relation).appendTo("#queryRelationList");
+        if (relation) $("#relationTemplate").tmpl(relation).appendTo("#queryRelationList");
       });
       return false;
     })
