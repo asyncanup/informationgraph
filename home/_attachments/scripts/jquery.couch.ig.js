@@ -211,7 +211,7 @@
                             l("refreshDoc set");
                           } else {
                             // doc
-                            l("refreshDoc(" + arg + ")");
+                            l("refreshDoc(" + arg.id + ")");
                             refreshDoc(arg);
                           }
                         } else {
@@ -273,15 +273,23 @@
                                     }
                         });
                       },
-    deleteDoc:        function(id, whenDeleted){
+    deleteDoc:        function(id, whenDeleted, forcingIt){
                         whenDeleted = setDefault(whenDeleted, defaultCallback);
                         require(id, "deleteDoc needs id");
+                        if(!forcingIt){
+                          ig.search("home/relations", {
+                            startkey:   [id],
+                            endkey:     [id, {}],
+                            limit:      1
+                          }, function(doc){
+                            throw("can't delete doc without deleting " + doc + " first.");
+                          });
+                        }
                         ig.doc(id, function(doc){
                           var d = couchDoc(doc);
-                          l("deleting doc");
                           db.removeDoc(d, { 
                             success: function(data){
-                                       l("deleted item");
+                                       l("deleted " + doc);
                                        ig.doc(data.id, function(docu){
                                          ig.notify("Deleted: " + docu);
                                          whenDeleted(doc);

@@ -114,9 +114,10 @@ $(document).ready(function(){
 
   $("#content")
     .delegate(".newItem", "submit", function(){
-      ig.newItem($(this.newItemValue).val(), function(doc){
+      var input = $(this.newItemValue);
+      ig.newItem(input.val(), function(doc){
         // if and when saved
-        $(this.newItemValue).val("");
+        $(input).val("");
         render(doc, "#itemList", "#itemTemplate");
         // this line is needed for _changes to affect this doc
         // otherwise ig.refresh would have to be run for every new item added
