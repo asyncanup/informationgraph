@@ -1,13 +1,13 @@
 $(document).ready(function(){
 
-  // TODO: filtering not working, render item again after trying to delete it unsuccessfully
+  // TODO: ig.refresh faulty with 2 linked placeholders
   var ig = $.ig;
 
   // NOTE: Extending JQuery in this statement
   $.fn.exists = function(){ return $(this).length !== 0; }
 
   function render(doc, placeholder, template) {
-    if (onPage(doc)){ 
+    if (onPage(doc, placeholder)){
       // if it's already on the page, just use the 
       // document refresh handler specified later
       ig.refresh(doc); 
@@ -22,12 +22,12 @@ $(document).ready(function(){
     return $(elem).parents("[doc_id]:first");
   }
 
-  function onPage(doc){
-    return $("[doc_id=" + doc._id + "]").exists();
+  function onPage(doc, placeholder){
+    return $("[doc_id=" + doc._id + "]", placeholder).exists();
   }
-  function findOnPage(doc){
-    if(onPage(doc)){
-      return $("[doc_id=" + doc._id + "]");
+  function findOnPage(doc, placeholder){
+    if(onPage(doc, placeholder)){
+      return $("[doc_id=" + doc._id + "]", placeholder);
     } else {
       throw("document not on page");
     }
@@ -159,20 +159,24 @@ $(document).ready(function(){
     })
     .delegate(".itemValue", "dblclick", function(){
       var e = docElem(this);
+      var p;
       ig.doc(e.attr("doc_id"), function(doc){
+        p = e.parent();
         e.after($("#itemEditTemplate").tmpl(doc)).remove();
-        findOnPage(doc).find("input:first").focus();
+        findOnPage(doc, p).find("input:first").focus();
       });
       return false;
     })
     .delegate(".docSearch", "click", function(){
       var e = docElem(this);
-      $("#queryRelationList").empty();
-      ig.search("home/relations", {
-        "startkey":   [e.attr("doc_id")],
-        "endkey":     [e.attr("doc_id"), {}]
-      }, function(relation){
-        if (relation) $("#relationTemplate").tmpl(relation).appendTo("#queryRelationList");
+      ig.linkPlaceholder("#queryRelationList", {
+          "view":           "home/relations",
+          "query":          {
+                              "startkey": [e.attr("doc_id")],
+                              "endkey":   [e.attr("doc_id"), {}]
+                            },
+          "beforeRender":   function(){ $("#queryRelationList").empty(); },
+          "render":         function(doc){ render(doc, "#queryRelationList", "#relationTemplate"); }
       });
       return false;
     })

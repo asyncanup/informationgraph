@@ -42,6 +42,7 @@
   function l(val) { 
     if ( window.console && debugMode ) { console.log("ig: " + val); } 
     // if it is desired to log objects, they must first be JSON.stringify'ed
+    // or be provided with a toString() method
   }
   
   function timestamp(){
@@ -208,31 +209,51 @@
                       },
     refresh:          function(arg){
                         // only details with refreshing the UI
-                        // arg can be a function or doc or nothing
-                        if (arg){
-                          if (typeof(arg) === "function"){
-                            refreshDoc = arg;
-                            l("refreshDoc set");
-                          } else {
-                            // doc
-                            l("refreshDoc(" + arg + ")");
-                            refreshDoc(arg);
+                        // arg can be a function or placeholder or doc or nothing
+                        function refreshPlaceholder(placeholder){
+                          if (!listeners[placeholder]){
+                            l("refresh: " + placeholder + " is not registered");
+                            return false;
                           }
-                        } else {
-                          // no argument passed
-                          for (var placeholder in listeners){
-                            var options = listeners[placeholder];
-                            var query = options.query;
-                            var render = options.render;
-                            var view = options.view;
-                            l("refreshing placeholder: " + placeholder);
-                            if (options.beforeRender){
-                              options.beforeRender();
+                          var options = listeners[placeholder];
+                          var query = options.query;
+                          var render = options.render;
+                          var view = options.view;
+                          l("refreshing placeholder: " + placeholder);
+                          if (options.beforeRender){
+                            options.beforeRender();
+                            l("refresh: " + placeholder + " initialized");
+                          }
+                          ig.search(view, query, function(doc){
+                            if(doc) {
+                              render(doc);
+                              l("refresh: rendered " + doc);
+                            } else {
+                              l("refresh: no results in " + view + " query");
                             }
-                            ig.search(view, query, function(doc){
-                              if(doc) render(doc);
-                            });
-                          }
+                          });
+                        }
+
+                        if (typeof(arg) === "function"){
+                          // refreshDoc handler
+                          refreshDoc = arg;
+                          l("refreshDoc set");
+                        } else if (typeof(arg) === "string"){
+                          // placeholder
+                          l("refresh: " + arg);
+                          $.each([arg], function(i, p){
+                            refreshPlaceholder(p);
+                          });
+                        } else if (typeof(arg) === "object"){
+                          // doc
+                          l("refreshDoc(" + arg + ")");
+                          refreshDoc(arg);
+                        } else if (typeof(arg) === "undefined"){
+                          // refresh the whole page
+                          l("refresh: everything");
+                          $.each(listeners, function(p, v){
+                            refreshPlaceholder(p);
+                          });
                         }
                         return ig;
                       },
@@ -244,7 +265,7 @@
 
                         listeners[placeholder] = options;
                         l("linked " + placeholder + " to " + options.view);
-                        ig.refresh(); // NOTE: contentious
+                        ig.refresh(placeholder);
                         return ig;
                       },
     unlinkPlaceholder:function(placeholder){
@@ -286,22 +307,22 @@
                             endkey:     [id, {}],
                             limit:      1
                           }, function(doc){
-                            if (doc === false){
+                            if (doc){
+                              ig.notify("Delete dependent relations first: " + doc);
+                              ig.doc(id, function(d){
+                                refreshDoc(d);
+                              });
+                            } else {
                               // search query returned no results
-                              ig.doc(id, function(doc){
-                                var d = couchDoc(doc);
-                                db.removeDoc(d, { 
+                              ig.doc(id, function(d){
+                                db.removeDoc(d, {
                                   success: function(data){
-                                             l("deleted " + doc);
-                                             ig.doc(data.id, function(docu){
-                                               ig.notify("Deleted: " + docu);
-                                               whenDeleted(doc);
-                                             });
+                                             l("deleted " + d);
+                                             ig.notify("Deleted: " + d);
+                                             whenDeleted(d);
                                            }
                                 });
                               });
-                            } else {
-                              l("delete dependent relations first: " + doc);
                             }
                           });
                         }

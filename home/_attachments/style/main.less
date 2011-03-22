@@ -129,7 +129,7 @@ input {
   .docSelect {
     .spoOption;
   }
-  .spoSearch {
+  .docSearch {
     .spoMain;
     &:hover {
       cursor:           pointer;
@@ -143,10 +143,7 @@ input {
     .spoMain;
     cursor:             default;
     .docSearch {
-      &:hover {
-        cursor:           pointer;
-        text-decoration:  underline;
-      }
+      padding:          0;
     }
   }
   .itemEdit {
@@ -198,6 +195,11 @@ input {
     margin:                 auto;
   }
   padding:                  5px;
+  .spo {
+    .docSearch {
+      .spoMain;
+    }
+  }
   .relationSelect {
     vertical-align:         middle;
     .relationSelectButton {
