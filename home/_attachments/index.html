@@ -42,9 +42,11 @@
   </body>
   <script id="itemTemplate" type="text/x-jquery-tmpl">
     <div doc_id="${_id}" class="item">
-      <div class="docSelect" title="Select item">-</div>
+      <div class="docSelect" title="Select item">
+        <span class="optionText">-</span>
+      </div>
       <div class="itemValue" title="Double Click to edit">
-        <span class="docSearch" title="Click to search">${value}</span>
+        <span class="docSearch" title="Search for this item">${value}</span>
       </div> 
     </div>
   </script>
@@ -64,18 +66,26 @@
         <td class="subject">{{tmpl(getSubject()) "#spoTemplate"}}</td>
         <td class="predicate">{{tmpl(getPredicate()) "#spoTemplate"}}</td>
         <td class="object">{{tmpl(getObject()) "#spoTemplate"}}</td>
-        <td class="relationSelect">
+        <td class="relationSelect docSelect">
           <div class="relationSelectButton" title="Select relation">
-            <span class="docSelect">-</span>
+            <span class="optionText">-</span>
           </div>
+        </td>
+        <td class="relationSearch docSearch">
+          <div class="relationSearchButton" title="Search for this relation">o</div>
+        </td>
+        <td class="relationDelete docDelete">
+          <div class="relationDeleteButton" title="Delete relation">x</div>
         </td>
       </tr></table>
     </div>
   </script>
   <script id="spoTemplate" type="text/x-jquery-tmpl">
     <div doc_id="${_id}" class="spo">
-      <div class="docSelect" title="Select doc">-</div>
-      <div class="docSearch" title="Click to search">${$item.data.toString()}</div>
+      <div class="docSelect" title="Select doc">
+        <span class="optionText">-</span>
+      </div>
+      <div class="docSearch" title="Search for this doc">${$item.data.toString()}</div>
     </div>
   </script>
   <script src="scripts/lru.js"></script>

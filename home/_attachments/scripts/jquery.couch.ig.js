@@ -4,7 +4,7 @@
 
   var db;
   var debugMode = true; // whether debug mode is on
-  var selectedItems = [];
+  var selectedSpo = [];
   var notifyUI = function(){};
   var cache = new LRUCache(1000);
   var hose; // to listen to document changes in the database
@@ -53,9 +53,12 @@
     // takes a doc from cache and returns its couchdb json
     var d = $.extend({}, doc);
     delete d.toString;
+    delete d.igSelectionIndex;
+    // ISSUE: because of this, the docs in the db can't have toString and igSelectionIndex fields
     if (doc.type === "item"){
       return d;
     } else if (doc.type === "relation"){
+      // ISSUE: relation docs can't these fields
       delete d.getSubject;
       delete d.getPredicate;
       delete d.getObject;
@@ -127,6 +130,8 @@
                           l("loading item from db");
                           db.openDoc(id, {
                             success: function(d){
+                                         d.igSelectionIndex = 0;
+                                         // whether this doc has been selected in gui
                                          if(d.type === "item"){
                                            d.toString = function(){ return this.value; }
                                            cache.remove(d._id);
@@ -175,8 +180,7 @@
                         require(callback, "search needs callback");
                         db.view(view, $.extend({}, query, {
                           success: function(data){ 
-                                     l("search query returned successfully with " + 
-                                         data.rows.length + " rows");
+                                     ig.notify("Search results: " + data.rows.length);
                                      if(data.rows.length === 0){
                                        callback(false);
                                      }
@@ -219,7 +223,7 @@
                           var query = options.query;
                           var render = options.render;
                           var view = options.view;
-                          l("refreshing placeholder: " + placeholder);
+                          l("refresh: refreshing " + placeholder);
                           if (options.beforeRender){
                             options.beforeRender();
                             l("refresh: " + placeholder + " initialized");
@@ -227,6 +231,9 @@
                           ig.search(view, query, function(doc){
                             if(doc) {
                               render(doc);
+                              (doc.igSelectionIndex)?  
+                                  guiDocSelect(doc, doc.igSelectionIndex) : 
+                                  guiDocUnSelect(doc);
                               l("refresh: rendered " + doc);
                             } else {
                               l("refresh: no results in " + view + " query");
@@ -248,6 +255,9 @@
                           // doc
                           l("refreshDoc(" + arg + ")");
                           refreshDoc(arg);
+                          (arg.igSelectionIndex)?  
+                              guiargSelect(arg, arg.igSelectionIndex) : 
+                              guiargUnSelect(arg);
                         } else if (typeof(arg) === "undefined"){
                           // refresh the whole page
                           l("refresh: everything");
@@ -349,54 +359,64 @@
                       },
     selectDoc:        function(id){
                         require(id, "selectDoc needs id");
+                        function select(doc){
+                          selectedSpo.push(doc);
+                          doc.igSelectionIndex = selectedSpo.length;
+                          l("selected: " + doc);
+                          guiDocSelect(doc, doc.igSelectionIndex);
+
+                          if (selectedSpo.length >= 3){
+                            makeRelation();
+                          }
+                        }
+                        function unselect(doc){
+                          selectedSpo.pop();
+                          doc.igSelectionIndex = 0;
+                          l("unselected:" + doc);
+                          guiDocUnSelect(doc);
+                        }
+                        function makeRelation(){
+                          l("subject, predicate and object selected, making relation");
+                          db.saveDoc({
+                            "type":       "relation",
+                            "subject":    selectedSpo[0]._id,
+                            "predicate":  selectedSpo[1]._id,
+                            "object":     selectedSpo[2]._id,
+                            "created_at": timestamp()
+                          }, {
+                            success: function(data){
+                                       $.each(selectedSpo, function(i, item){
+                                         item.igSelectionIndex = 0;
+                                         guiDocUnSelect(item);
+                                       });
+                                       selectedSpo = [];
+                                       ig.doc(data.id, function(relation){
+                                         ig.notify("Created: " + relation);
+                                       });
+                                     }
+                          });
+                        }
+
                         ig.doc(id, function(doc){
-                          function select(){
-                            selectedItems.push(doc);
-                            l("selected: " + doc);
-                            guiDocSelect(doc, selectedItems.length);
-                          }
-                          function unselect(){
-                            selectedItems.pop();
-                            l("unselected:" + doc);
-                            guiDocUnSelect(doc);
-                          }
-                          if (doc._id && selectedItems.length !== 0){
-                            if (doc._id === selectedItems[selectedItems.length - 1]._id){
-                              unselect();
-                              return ig;
+                          if (selectedSpo.length !== 0){
+                            if (doc._id === selectedSpo[selectedSpo.length - 1]._id){
+                              unselect(doc);
+                            } else if (
+                              $.inArray(
+                                doc._id, 
+                                selectedSpo.map(function(spo){
+                                  return spo._id;
+                                })
+                              ) !== -1) {
+                              ig.notify("Sorry, already selected that one.");
                             } else {
-                              // checking if the received item is not already selected
-                              // (except for the case when it was the last seleted item,
-                              // which has been handled above)
-                              selectedItems.forEach(function(item){
-                                if (item._id === doc._id){
-                                  throw("item already selected");
-                                }
-                              });
+                              select(doc);
                             }
-                          }
-                          select();
-                          if (selectedItems.length >= 3){
-                            l("subject, predicate and object selected, making relation");
-                            db.saveDoc({
-                              "type":       "relation",
-                              "subject":    selectedItems[0]._id,
-                              "predicate":  selectedItems[1]._id,
-                              "object":     selectedItems[2]._id,
-                              "created_at": timestamp()
-                            }, {
-                              success: function(data){
-                                         guiDocUnSelect(selectedItems[0]);
-                                         guiDocUnSelect(selectedItems[1]);
-                                         guiDocUnSelect(selectedItems[2]);
-                                         selectedItems = [];
-                                         ig.doc(data.id, function(relation){
-                                           ig.notify("Created: " + relation);
-                                         });
-                                       }
-                            });
+                          } else {
+                            select(doc);
                           }
                         });
+                        return ig;
                       },
     setupLogin:       function(loginOptions, loggedIn, loggedOut){
                         // ISSUE: Ok with loggedIn/loggedOut having to return dom 

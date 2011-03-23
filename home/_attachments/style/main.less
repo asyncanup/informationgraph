@@ -13,6 +13,11 @@
 @dark-secondary-2:  #BFB6AA;
 @dark-secondary-1:  #A67C46;
 
+@optionDefaultColor:white;
+@optionFocusColor:  maroon;
+
+@relationSelectColor: lighten(@secondary, 4%);
+
 @body-padding-top:  20px;
 @body-padding-left: 2%;
 @default-input-padding: 5px;
@@ -98,15 +103,21 @@ input {
   }
 }
 
+.docSelect, .docSearch, .docDelete {
+}
+
 /* For .docSelect and .docDelete */
 .spoOption(){
   cursor:           pointer;
   padding:          0 @spoOption-padding;
   width:            @spoOption-width;
   text-align:       center;
-  color:            @light-primary-2;
+  color:            @optionDefaultColor;
   float:            right;
   background-color: @dark-secondary-2;
+  &:hover {
+    color:          @optionFocusColor;
+  }
 }
 
 /* For .itemValue and .itemEditForm input */
@@ -122,9 +133,6 @@ input {
   border:             1px solid @dark-primary-2;
   &:hover {
     background-color: darken(@light-primary-2, 5%);
-    .docDelete {
-      color:          maroon;
-    }
   }
   .docSelect {
     .spoOption;
@@ -168,29 +176,47 @@ input {
 .spo {
   .spoStuff;
 }
-.selected() {
-  background-color:   @secondary;
+.selected(@bgColor: @secondary) {
+  background-color:   @bgColor;
   &:hover {
-    background-color: @secondary;
-  }
-  .docSelect {
-    color:            maroon;
+    background-color: @bgColor;
   }
 }
 .itemSelected {
   .selected;
+  .docSelect {
+    color:            @optionFocusColor;
+  }
 }
 .spoSelected {
   .selected;
-}
-.relationSelected {
-  .relationSelectButton {
-    background-color:       maroon;
-    color:                  @light-secondary-2;
+  .docSelect {
+    color:            @optionFocusColor;
   }
 }
 
+.relationOption() {
+  vertical-align:         middle;
+  color:                  @optionDefaultColor;
+  cursor:                 pointer;
+  &:hover {
+    color:                @optionFocusColor;
+  }
+}
+.relationOptionButton() {
+  .border-radius(9px);
+  border:                 1px solid gray;
+  background-color:       @dark-secondary-2;
+  height:                 18px;
+  margin:                 0 2px;
+  text-align:             center;
+  width:                  @spoOption-width;
+}
 .relation {
+  border:                   1px solid transparent;
+  &:hover {
+    background-color:       @relationSelectColor;
+  }
   table {
     margin:                 auto;
   }
@@ -201,19 +227,31 @@ input {
     }
   }
   .relationSelect {
-    vertical-align:         middle;
+    .relationOption;
     .relationSelectButton {
-      .border-radius(9px);
-      border:                 1px solid gray;
-      background-color:       @light-secondary-2;
-      color:                  maroon;
-      cursor:                 pointer;
-      height:                 17px;
-      margin:                 0 5px;
-      text-align:             center;
-      width:                  @spoOption-width;
+      .relationOptionButton;
+      margin-left:          8px;
     }
   }
+  .relationSearch {
+    .relationOption;
+    .relationSearchButton {
+      .relationOptionButton;
+    }
+  }
+  .relationDelete {
+    .relationOption;
+    .relationDeleteButton {
+      .relationOptionButton;
+    }
+  }
+}
+.relationSelected {
+  .selected(@relationSelectColor);
+  .relationSelect {
+    color:            @optionFocusColor;
+  }
+  border:                     1px solid lightgrey;
 }
 
 #content {

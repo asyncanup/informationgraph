@@ -1,6 +1,8 @@
 $(document).ready(function(){
 
-  // TODO: ig.refresh faulty with 2 linked placeholders
+  cl = function(x){ console.log(x); }
+
+  // TODO: 
   var ig = $.ig;
 
   // NOTE: Extending JQuery in this statement
@@ -87,8 +89,9 @@ $(document).ready(function(){
             findOnPage(doc).each(function(i, e){
               e = $(e);
               e .addClass(elemType(e) + "Selected")
-                .find(".docSelect:last") 
+                .find(".docSelect:last")
                 // last because otherwise a relation's subject's docSelect might be chosen
+                .find(".optionText")
                 .text(selectText[index]);
             });
           }, 
@@ -98,6 +101,7 @@ $(document).ready(function(){
               e = $(e);
               e .removeClass(elemType(e) + "Selected")
                 .find(".docSelect:last")
+                .find(".optionText")
                 .text(unSelectText);
             });
           }
