@@ -76,6 +76,14 @@
     }
   }
 
+  function hashUp(spoArr){
+    if (spoArr.length && spoArr.length === 3){
+      return hex_sha1(JSON.stringify(spoArr.map(function (spo){
+        return spo._id;
+      })));
+    }
+  }
+
   $.extend($.ig, {
     debug:            function(cmd){
                         // stops with "stop", starts with anything else
@@ -99,7 +107,11 @@
                                 if (d.deleted){
                                   cache.remove(d.id);
                                   l(d.id + " deleted");
-                                  ig.refresh({ "_id": d.id,  "_deleted": true });
+                                  ig.refresh({ 
+                                    "_id": d.id,  
+                                    "_deleted": true,
+                                    "toString": function(){ return this._id; }
+                                  });
                                 } else {
                                   ig.doc(d.id, function(doc){
                                     l(doc + " updated");
@@ -174,13 +186,15 @@
                           });
                         }
                       },
-    search:           function(view, query, callback){
+    search:           function(view, query, callback, dontNotify){
                         // calls callback with false if no results
                         require(view, "search needs view");
                         require(callback, "search needs callback");
                         db.view(view, $.extend({}, query, {
                           success: function(data){ 
-                                     ig.notify("Search results: " + data.rows.length);
+                                     if (!dontNotify) {
+                                       ig.notify("Search results: " + data.rows.length);
+                                     }
                                      if(data.rows.length === 0){
                                        callback(false);
                                      }
@@ -256,8 +270,8 @@
                           l("refreshDoc(" + arg + ")");
                           refreshDoc(arg);
                           (arg.igSelectionIndex)?  
-                              guiargSelect(arg, arg.igSelectionIndex) : 
-                              guiargUnSelect(arg);
+                              guiDocSelect(arg, arg.igSelectionIndex) : 
+                              guiDocUnSelect(arg);
                         } else if (typeof(arg) === "undefined"){
                           // refresh the whole page
                           l("refresh: everything");
@@ -378,6 +392,7 @@
                         function makeRelation(){
                           l("subject, predicate and object selected, making relation");
                           db.saveDoc({
+                            "_id":        hashUp(selectedSpo),
                             "type":       "relation",
                             "subject":    selectedSpo[0]._id,
                             "predicate":  selectedSpo[1]._id,
