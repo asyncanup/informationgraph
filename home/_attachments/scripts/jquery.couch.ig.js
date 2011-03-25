@@ -82,7 +82,7 @@
     if (spoIdArr.length && spoIdArr.length === 3){
       return hex_sha1(JSON.stringify(spoIdArr.map(function (spoId){
         if(typeof(spoId === "string")){
-          return spo;
+          return spoId;
         } else {
           return null;
         }
@@ -416,77 +416,12 @@
                                        ig.doc(data.id, function(relation){
                                          ig.notify("Created: " + relation);
                                          var allAns = [];
-                                         makeAnswers(relation, function(ans){
-                                           allAns.push(ans);
-                                         });
-                                         
+                                         // TODO: makeAnswers
                                        });
                                      }
                           });
                         }
-// TODO:
-                        function toArray(r){
-                          return [(r.getSubject().type === "relation")? toArray(r.getSubject()) : ,
-                                  
-                                 ]
 
-                        }
-
-                        function makeAnswers(relation, callback){
-                          function newAnswer(id, relation, spo){
-                            return {
-                              "_id":      id,
-                              "type":     "answer",
-                              "relation": relation._id,
-                              "answer":   spo._id
-                            }
-                          }
-                          function queryId(spoArr){
-                            var ids = [];
-                            $.each(spoArr, function(spo){
-                              if (spo === null){
-                                ids.push(null);
-                              } else if (spo.type && spo.type === "item"){
-                                ids.push(spo._id);
-                              } else if (spo.length && spo.length === 3){
-                                ids.push(queryId(spo));
-                              } else {
-                                cl("SCREAM OUT LOUD");
-                              }
-                            });
-                            return hashUp(ids);
-                          }
-                          var s = relation.getSubject(),
-                              p = relation.getPredicate(),
-                              o = relation.getObject();
-                          $.each([s, p, o], function(i, spo){
-                            var arr = [s, p, o];
-                            arr[i] = null;
-                            $.each(arr, function(index, v){
-                              if (v === null){
-                                return;
-                              } else if(v.type && v.type === "item") {
-                                arr[index] = v._id;
-                              } else if (v.type && v.type === "relation"){
-                                arr[index] = [v.getSubject(), v.getPredicate(), v.getObject()];
-                                $.each(arr[index], function(i2, spo2){
-                                  
-                                });
-                              }
-                            });
-                          });
-                          callback(newAnswer(hashUp(ids)));
-                        }
-                        function saveAnswer(ans){
-                          l("saving answer:");
-                          ig.doc(ans._id, function(docFound){
-                            if (docFound) {
-                              ans._rev = docFound._rev;
-                              cl(ans);
-                              db.saveDoc(ans, { "success":  this });
-                            }
-                          });
-                        }
 
                         ig.doc(id, function(doc){
                           if (selectedSpo.length !== 0){
@@ -508,6 +443,97 @@
                           }
                         });
                         return ig;
+                      },
+    makeAnswers:      function(relation){
+                        function prepare(spo){
+                          if (!spo) { cl("STOP RIGHT NOW!"); }
+                          var obj = $.extend({}, spo);
+                          obj.currentIndex = obj.nullIndex = -1;
+                          obj.isNull = false;
+                          if (obj.type === "relation"){
+                            obj[0] = prepare(obj.getSubject());
+                            obj[1] = prepare(obj.getPredicate());
+                            obj[2] = prepare(obj.getObject());
+                            obj[0].up = obj[1].up = obj[2].up = obj;
+                          }
+                          return obj;
+                        }
+                        function newAnswer(qid, spo){
+                          return {
+                            "query":    qid,
+                            "type":     "answer",
+                            "relation": relation.toString(),
+                            "answer":   spo.toString()
+                          }
+                        }
+                        function queryId(r){
+                          //cl("queryId for " + JSON.stringify(r));
+                          var ids = [];
+                          if (r.isNull === true){
+                            cl("null");
+                            ids.push(null);
+                          } else if (r.type && r.type === "item"){
+                            cl(r.toString());
+                            ids.push(r._id);
+                          } else if (r.type && r.type === "relation"){
+                            cl(r.toString());
+                            ids.push(hashUp([0,1,2].map(function(n){
+                              return queryId(r[n]);
+                            })));
+                          } else {
+                            cl("SCREAM OUT LOUD");
+                          }
+                          return hashUp(ids);
+                        }
+                        function shiftNull(r){
+                          if (r === false){
+                            // meaning shiftNull was called on R.up (boundary condition)
+                            return;
+                          }
+                          r.currentIndex = 0;
+                          if (r.nullIndex === -1){
+                            r.nullIndex = 0;
+                            r[0].isNull = true;
+                            triggerAnswer();
+                            more(r);
+                          } else if (r.nullIndex < 2){
+                            r[r.nullIndex].isNull = false;
+                            r.nullIndex += 1;
+                            r[r.nullIndex].isNull = true;
+                            triggerAnswer();
+                            more(r);
+                          } else if (r.nullIndex === 2){
+                            r[r.nullIndex] = false;
+                            r.nullIndex = -1;
+                            shiftNull(r.up);
+                          }
+                        }
+                        function triggerAnswer(){
+                          answers.push(newAnswer(queryId(R), R[R.nullIndex]));
+                        }
+                        function more(r){
+                          if (r.nullIndex === -1){
+                            shiftNull(r);
+                          } else if (r.currentIndex === r.nullIndex){
+                            r.currentIndex += 1;
+                            more(r);
+                          } else if (r.currentIndex === 3){
+                            shiftNull(r);
+                          } else if (r[r.currentIndex].type === "item"){
+                            r.currentIndex += 1;
+                            more(r)
+                          } else if (r[r.currentIndex].type === "relation"){
+                            more(r[0]);
+                          } else {
+                            cl("NO BLOODY WAY");
+                          }
+                        }
+
+                        var answers = [];
+                        var R = prepare(relation);
+                        R.up = false;
+                        more(R);
+                        return answers;
                       },
     setupLogin:       function(loginOptions, loggedIn, loggedOut){
                         // ISSUE: Ok with loggedIn/loggedOut having to return dom 
