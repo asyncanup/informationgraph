@@ -76,10 +76,16 @@
     }
   }
 
-  function hashUp(spoArr){
-    if (spoArr.length && spoArr.length === 3){
-      return hex_sha1(JSON.stringify(spoArr.map(function (spo){
-        return spo._id;
+  function hashUp(spoIdArr){
+    // accepts only a 3 member string array. 
+    // replaces non-conforming members with null
+    if (spoIdArr.length && spoIdArr.length === 3){
+      return hex_sha1(JSON.stringify(spoIdArr.map(function (spoId){
+        if(typeof(spoId === "string")){
+          return spo;
+        } else {
+          return null;
+        }
       })));
     }
   }
@@ -139,7 +145,6 @@
                         if (!forceFetch && cache.find(id)){
                           callback(cache.get(id));
                         } else {
-                          l("loading item from db");
                           db.openDoc(id, {
                             success: function(d){
                                          d.igSelectionIndex = 0;
@@ -181,6 +186,9 @@
                                                });
                                              });
                                            });
+                                         } else if (type === "answer"){
+                                           l("answer loaded: " + d._id);
+                                           callback(d);
                                          }
                                      }
                           });
@@ -379,7 +387,7 @@
                           l("selected: " + doc);
                           guiDocSelect(doc, doc.igSelectionIndex);
 
-                          if (selectedSpo.length >= 3){
+                          if (selectedSpo.length == 3){
                             makeRelation();
                           }
                         }
@@ -392,7 +400,7 @@
                         function makeRelation(){
                           l("subject, predicate and object selected, making relation");
                           db.saveDoc({
-                            "_id":        hashUp(selectedSpo),
+                            "_id":        hashUp(selectedSpo.map(function(spo){ return spo._id; })),
                             "type":       "relation",
                             "subject":    selectedSpo[0]._id,
                             "predicate":  selectedSpo[1]._id,
@@ -407,8 +415,76 @@
                                        selectedSpo = [];
                                        ig.doc(data.id, function(relation){
                                          ig.notify("Created: " + relation);
+                                         var allAns = [];
+                                         makeAnswers(relation, function(ans){
+                                           allAns.push(ans);
+                                         });
+                                         
                                        });
                                      }
+                          });
+                        }
+// TODO:
+                        function toArray(r){
+                          return [(r.getSubject().type === "relation")? toArray(r.getSubject()) : ,
+                                  
+                                 ]
+
+                        }
+
+                        function makeAnswers(relation, callback){
+                          function newAnswer(id, relation, spo){
+                            return {
+                              "_id":      id,
+                              "type":     "answer",
+                              "relation": relation._id,
+                              "answer":   spo._id
+                            }
+                          }
+                          function queryId(spoArr){
+                            var ids = [];
+                            $.each(spoArr, function(spo){
+                              if (spo === null){
+                                ids.push(null);
+                              } else if (spo.type && spo.type === "item"){
+                                ids.push(spo._id);
+                              } else if (spo.length && spo.length === 3){
+                                ids.push(queryId(spo));
+                              } else {
+                                cl("SCREAM OUT LOUD");
+                              }
+                            });
+                            return hashUp(ids);
+                          }
+                          var s = relation.getSubject(),
+                              p = relation.getPredicate(),
+                              o = relation.getObject();
+                          $.each([s, p, o], function(i, spo){
+                            var arr = [s, p, o];
+                            arr[i] = null;
+                            $.each(arr, function(index, v){
+                              if (v === null){
+                                return;
+                              } else if(v.type && v.type === "item") {
+                                arr[index] = v._id;
+                              } else if (v.type && v.type === "relation"){
+                                arr[index] = [v.getSubject(), v.getPredicate(), v.getObject()];
+                                $.each(arr[index], function(i2, spo2){
+                                  
+                                });
+                              }
+                            });
+                          });
+                          callback(newAnswer(hashUp(ids)));
+                        }
+                        function saveAnswer(ans){
+                          l("saving answer:");
+                          ig.doc(ans._id, function(docFound){
+                            if (docFound) {
+                              ans._rev = docFound._rev;
+                              cl(ans);
+                              db.saveDoc(ans, { "success":  this });
+                            }
                           });
                         }
 
