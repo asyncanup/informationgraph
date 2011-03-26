@@ -313,7 +313,10 @@
     newItem:          function(val, whenSaved){
                         whenSaved = setDefault(whenSaved, defaultCallback);
                         val = shortenItem(val, { "onlyTrim": true });
-                        if (!val){ throw("empty value"); }
+                        if (!val){ 
+                          ig.notify("Please enter a value"); 
+                          return false;
+                        }
                         db.saveDoc({
                           "type":   "item",
                           // trim, remove repeated whitespace in value string
@@ -400,7 +403,8 @@
                         function makeRelation(){
                           l("subject, predicate and object selected, making relation");
                           db.saveDoc({
-                            "_id":        hashUp(selectedSpo.map(function(spo){ return spo._id; })),
+                            "_id":        JSON.stringify(selectedSpo.map(function(spo){
+                                              return spo._id; })),
                             "type":       "relation",
                             "subject":    selectedSpo[0]._id,
                             "predicate":  selectedSpo[1]._id,
@@ -415,8 +419,7 @@
                                        selectedSpo = [];
                                        ig.doc(data.id, function(relation){
                                          ig.notify("Created: " + relation);
-                                         var allAns = [];
-                                         // TODO: makeAnswers
+                                         // TODO: ig.makeAnswers(relation);
                                        });
                                      }
                           });
@@ -446,7 +449,6 @@
                       },
     makeAnswers:      function(relation){
                         function prepare(spo){
-                          if (!spo) { cl("STOP RIGHT NOW!"); }
                           var obj = $.extend({}, spo);
                           obj.currentIndex = obj.nullIndex = -1;
                           obj.isNull = false;
@@ -458,36 +460,18 @@
                           }
                           return obj;
                         }
-                        function newAnswer(qid, spo){
+                        function newAnswer(qArr, spo){
                           return {
-                            "query":    qid,
+                            "query":    qArr,
                             "type":     "answer",
-                            "relation": relation.toString(),
-                            "answer":   spo.toString()
+                            "relation": relation._id,
+                            "answer":   spo._id
                           }
-                        }
-                        function queryId(r){
-                          //cl("queryId for " + JSON.stringify(r));
-                          var ids = [];
-                          if (r.isNull === true){
-                            cl("null");
-                            ids.push(null);
-                          } else if (r.type && r.type === "item"){
-                            cl(r.toString());
-                            ids.push(r._id);
-                          } else if (r.type && r.type === "relation"){
-                            cl(r.toString());
-                            ids.push(hashUp([0,1,2].map(function(n){
-                              return queryId(r[n]);
-                            })));
-                          } else {
-                            cl("SCREAM OUT LOUD");
-                          }
-                          return hashUp(ids);
                         }
                         function shiftNull(r){
                           if (r === false){
                             // meaning shiftNull was called on R.up (boundary condition)
+                            l("done making answers");
                             return;
                           }
                           r.currentIndex = 0;
@@ -503,13 +487,15 @@
                             triggerAnswer();
                             more(r);
                           } else if (r.nullIndex === 2){
-                            r[r.nullIndex] = false;
+                            r[r.nullIndex].isNull = false;
                             r.nullIndex = -1;
                             shiftNull(r.up);
                           }
                         }
                         function triggerAnswer(){
-                          answers.push(newAnswer(queryId(R), R[R.nullIndex]));
+                          var qArr = ig.queryArr(R);
+                          l(R[R.nullIndex] + " answers " + JSON.stringify(qArr));
+                          answers.push(newAnswer(qArr, R[R.nullIndex]));
                         }
                         function more(r){
                           if (r.nullIndex === -1){
@@ -521,11 +507,9 @@
                             shiftNull(r);
                           } else if (r[r.currentIndex].type === "item"){
                             r.currentIndex += 1;
-                            more(r)
+                            more(r);
                           } else if (r[r.currentIndex].type === "relation"){
-                            more(r[0]);
-                          } else {
-                            cl("NO BLOODY WAY");
+                            more(r[r.currentIndex]);
                           }
                         }
 
@@ -534,6 +518,17 @@
                         R.up = false;
                         more(R);
                         return answers;
+                      },
+    queryArr:         function(r){
+                        if (r.isNull){
+                          return null;
+                        } else if (r.type && r.type === "item"){
+                          return r.toString(); // ISSUE: r._id
+                        } else if (r.type && r.type === "relation"){
+                          return [0, 1, 2].map(function(n){
+                            return ig.queryArr(r[n]);
+                          });
+                        }
                       },
     setupLogin:       function(loginOptions, loggedIn, loggedOut){
                         // ISSUE: Ok with loggedIn/loggedOut having to return dom 
