@@ -36,8 +36,9 @@ function (newDoc, savedDoc, userCtx){
     require("object");
   }
 
-  // can't use this because deletion becomes impossible 
-  // with $.couch.db('blah').removeDoc since removeDoc sends only rev as parameter
-  //require("created_at");    
-  //unchanged("created_at");
+  if (newDoc.type === "answer"){
+    require("query");
+    require("answer");
+    require("relation");
+  }
 }

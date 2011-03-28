@@ -411,17 +411,19 @@
                             "object":     selectedSpo[2]._id,
                             "created_at": timestamp()
                           }, {
-                            success: function(data){
-                                       $.each(selectedSpo, function(i, item){
-                                         item.igSelectionIndex = 0;
-                                         guiDocUnSelect(item);
-                                       });
-                                       selectedSpo = [];
-                                       ig.doc(data.id, function(relation){
-                                         ig.notify("Created: " + relation);
-                                         // TODO: ig.makeAnswers(relation);
-                                       });
-                                     }
+                            success:  function(data){
+                                        $.each(selectedSpo, function(i, item){
+                                          item.igSelectionIndex = 0;
+                                          guiDocUnSelect(item);
+                                        });
+                                        selectedSpo = [];
+                                        ig.doc(data.id, function(relation){
+                                          ig.notify("Created: " + relation);
+                                          ig.saveAnswers(relation, function(){
+                                            l("done saving answers");
+                                          })
+                                        });
+                                      }
                           });
                         }
 
@@ -447,6 +449,26 @@
                         });
                         return ig;
                       },
+    saveAnswers:      function (relation, callback){
+                        var answers = ig.makeAnswers(relation);
+                        l("saving answers to db");
+                        next(0);
+                        function next(i){
+                          db.saveDoc(answers[i], {
+                            "success":   function(data){
+                              l("saved: " + JSON.stringify(answers[i].query));
+                              (i < answers.length - 1)? next(i+1): callback();
+                            }
+                          });
+                        }
+                      },
+    deleteAnswers:    function(relation, callback){
+                        db.view("home/answers", {
+                          
+                        }, function(data){
+                          
+                        });
+                      },
     makeAnswers:      function(relation){
                         function prepare(spo){
                           var obj = $.extend({}, spo);
@@ -468,56 +490,57 @@
                             "answer":   spo._id
                           }
                         }
-                        function shiftNull(r){
+                        function shiftNull(r, answers){
                           if (r === false){
                             // meaning shiftNull was called on R.up (boundary condition)
                             l("done making answers");
-                            return;
+                            return answers;
                           }
                           r.currentIndex = 0;
                           if (r.nullIndex === -1){
                             r.nullIndex = 0;
                             r[0].isNull = true;
-                            triggerAnswer();
-                            more(r);
+                            answers = triggerAnswer(answers);
+                            answers = more(r, answers);
                           } else if (r.nullIndex < 2){
                             r[r.nullIndex].isNull = false;
                             r.nullIndex += 1;
                             r[r.nullIndex].isNull = true;
-                            triggerAnswer();
-                            more(r);
+                            answers = triggerAnswer(answers);
+                            answers = more(r, answers);
                           } else if (r.nullIndex === 2){
                             r[r.nullIndex].isNull = false;
                             r.nullIndex = -1;
-                            shiftNull(r.up);
+                            answers = shiftNull(r.up, answers);
                           }
+                          return answers;
                         }
-                        function triggerAnswer(){
+                        function triggerAnswer(answers){
                           var qArr = ig.queryArr(R);
                           l(R[R.nullIndex] + " answers " + JSON.stringify(qArr));
                           answers.push(newAnswer(qArr, R[R.nullIndex]));
+                          return answers;
                         }
-                        function more(r){
+                        function more(r, answers){
                           if (r.nullIndex === -1){
-                            shiftNull(r);
+                            answers = shiftNull(r, answers);
                           } else if (r.currentIndex === r.nullIndex){
                             r.currentIndex += 1;
-                            more(r);
+                            answers = more(r, answers);
                           } else if (r.currentIndex === 3){
-                            shiftNull(r);
+                            answers = shiftNull(r, answers);
                           } else if (r[r.currentIndex].type === "item"){
                             r.currentIndex += 1;
-                            more(r);
+                            answers = more(r, answers);
                           } else if (r[r.currentIndex].type === "relation"){
-                            more(r[r.currentIndex]);
+                            answers = more(r[r.currentIndex], answers);
                           }
+                          return answers;
                         }
 
-                        var answers = [];
                         var R = prepare(relation);
                         R.up = false;
-                        more(R);
-                        return answers;
+                        return more(R, []);
                       },
     queryArr:         function(r){
                         if (r.isNull){
