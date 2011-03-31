@@ -3,6 +3,7 @@
     var debugMode, ig, selectedSpo, _ref;
     ig = (_ref = $.ig) != null ? _ref : $.ig = {};
     debugMode = true;
-    return selectedSpo = [];
+    selectedSpo = [];
+    return hell();
   })(jQuery);
 }).call(this);

@@ -1,10 +1,8 @@
 $(document).ready ->
+  # TODO: #itemList should have all items instead of excluding the ones already on the page
   cl = (str)-> console.log str
   ig = $.ig
   
-  exists = (elem)->
-    $(elem).length isnt 0
-
   render = (doc, placeholder, template)->
     if onPage doc, placeholder
       ig.refresh doc
@@ -15,10 +13,10 @@ $(document).ready ->
     $(elem).parents "[doc_id]:first"
 
   findOnPage = (doc, placeholder)->
-    if onPage doc, placeholder
-      $ "[doc_id=#{doc._id}]", placeholder
-    else
-      throw "document not on page"
+    $ "[doc_id=#{doc._id}]", placeholder
+
+  exists = (elem)->
+    $(elem).length isnt 0
 
   onPage = (doc)->
     exists findOnPage doc
@@ -46,6 +44,7 @@ $(document).ready ->
     -> $("#loginButton").text("Login")
 
   ig.refresh (doc)->
+    ### this is the document refresh handler for the app ###
     elems = findOnPage doc
     if onPage doc
       if doc._deleted
@@ -73,6 +72,10 @@ $(document).ready ->
       elems.each (i, e)->
         e = $ e
         e.removeClass "#{elemType(e)}Selected"
+        ### 
+          .docSelect:last because otherwise a relation's 
+          subject's docSelect button might be chosen
+        ###
         e.find(".docSelect:last").find(".optionText")
           .text unSelectText
   )
@@ -101,15 +104,18 @@ $(document).ready ->
         beforeRender: -> $("#itemList").empty()
         render:       (doc)-> render doc, "#itemList", "#itemTemplate"
 
-  co = $ "content"
+  co = $ "#content"
   co.delegate ".newItem", "submit", ->
     input = $ this.newItemValue
+    cl input.val()
     ig.newItem input.val(), (doc)->
       $(input).val("")
+      ### this line is needed for _changes to affect this new doc ###
       render doc, "#itemList", "#itemTemplate"
     false
   co.delegate ".docSelect", "click", ->
     e = docElem this
+    cl e
     id = e.attr "doc_id"
     ig.selectDoc id
     false
@@ -120,6 +126,7 @@ $(document).ready ->
     false
   co.delegate ".docSearch", "click", ->
     e = docElem this
+    cl e
     id = e.attr "doc_id"
     ig.linkPlaceholder "#queryRelationList"
       view:         "home/relations"
