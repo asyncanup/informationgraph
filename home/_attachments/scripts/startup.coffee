@@ -52,15 +52,29 @@ $(document).ready ->
         elems.remove()
       else
         elems.each (i, e) ->
-          e = $(e)
+          e = $ e
           template = $ "##{elemType(e)}Template"
           e.after template.tmpl doc
           e.remove()
           $.tmplItem(e).data = doc
     
-  ig.docSelection (doc, index) ->
-    selectText = ["-", "s", "p", "o"]
-    elems = findOnPage doc
-    elems.each (i, e) ->
-      e = $(e)
-      e.addClass "#{elemType(e)}Selected"
+  ig.docSelection(
+    (doc, index) ->
+      selectText = ["-", "s", "p", "o"]
+      elems = findOnPage doc
+      elems.each (i, e) ->
+        e = $ e
+        e.addClass "#{elemType(e)}Selected"
+        e.find(".docSelect:last").find(".optionText")
+          .text selectText[index]
+    (doc) ->
+      unSelectText = "-"
+      elems = findOnPage doc
+      elems.each (i, e) ->
+        e = $ e
+        e.removeClass "#{elemType(e)}Selected"
+        e.find(".docSelect:last").find(".optionText")
+          .text unSelectText
+  )
+
+  
