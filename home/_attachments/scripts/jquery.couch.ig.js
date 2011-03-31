@@ -76,18 +76,42 @@
     }
   }
 
-  function hashUp(spoIdArr){
+  function hashUp(arg){
     // accepts only a 3 member string array. 
     // replaces non-conforming members with null
-    if (spoIdArr.length && spoIdArr.length === 3){
-      return hex_sha1(JSON.stringify(spoIdArr.map(function (spoId){
-        if(typeof(spoId === "string")){
-          return spoId;
-        } else {
-          return null;
-        }
-      })));
+    if (typeof(arg) === "string"){
+      // for a new item's id
+      l("hashing up " + arg);
+      return hex_sha1(arg);
+    } else if (arg.isNull === true){
+      // for the spo from makeAnswers
+      return null;
+    } else if (arg[0] && arg[1] && arg[2]) {
+      // for a new relation's id from 
+      if (arg.length && arg.push){
+        l("hashing up " + JSON.stringify([0,1,2].map(function(i){ return arg[i].toString(); })));
+      } else if (arg.type === "relation"){
+        l("hashing up " + arg);
+      }
+      return hex_sha1(JSON.stringify([0,1,2].map(function(i){ return hashUp(arg[i]); })));
+    } else if (arg.type === "item"){
+      return arg.value;
+    } else if (arg.type === "relation"){
+      return arg.toString();
+    } else if (arg.type === "answer"){
+      l("hashing up " + JSON.stringify(arg.query));
+    } else if (arg === null){
+      // for the query arrays from makeAnswers
+      return null;
+    } else {
+      return undefined;
     }
+  }
+
+  function couchError(err){
+    return function(response){
+      ig.notify(err + ": " + response.reason);
+    };
   }
 
   $.extend($.ig, {
@@ -146,51 +170,52 @@
                           callback(cache.get(id));
                         } else {
                           db.openDoc(id, {
-                            success: function(d){
-                                         d.igSelectionIndex = 0;
-                                         // whether this doc has been selected in gui
-                                         if(d.type === "item"){
-                                           d.toString = function(){ return this.value; }
-                                           cache.remove(d._id);
-                                           cache.put(d._id, d);
-                                           l("item loaded: " + d);
-                                           callback(d);
-                                         } else if (d.type === "relation"){
-                                           ig.doc(d.subject, function(subject){
-                                             ig.doc(d.predicate, function(predicate){
-                                               ig.doc(d.object, function(object){
-                                                 d.getSubject = function(){
-                                                     // note that this will return undefined
-                                                     // if subject of a relation has been 
-                                                     // changed without loading the new 
-                                                     // subject doc in cache.
-                                                     return cache.get(d.subject);
-                                                 };
-                                                 d.getPredicate = function(){
-                                                     return cache.get(d.predicate);
-                                                 };
-                                                 d.getObject = function(){
-                                                     return cache.get(d.object);
-                                                 };
-                                                 d.toString = function(){
-                                                   return "( " + 
-                                                            this.getSubject() + " - " + 
-                                                            this.getPredicate() + " - " + 
-                                                            this.getObject() + 
-                                                          " )";
-                                                 };
-                                                 cache.remove(d._id);
-                                                 cache.put(d._id, d);
-                                                 l("relation loaded: " + d);
-                                                 callback(d);
-                                               });
-                                             });
-                                           });
-                                         } else if (type === "answer"){
-                                           l("answer loaded: " + d._id);
-                                           callback(d);
-                                         }
-                                     }
+                            "success":  function(d){
+                              d.igSelectionIndex = 0;
+                              // whether this doc has been selected in gui
+                              if(d.type === "item"){
+                                d.toString = function(){ return this.value; }
+                                cache.remove(d._id);
+                                cache.put(d._id, d);
+                                l("item loaded: " + d);
+                                callback(d);
+                              } else if (d.type === "relation"){
+                                ig.doc(d.subject, function(subject){
+                                  ig.doc(d.predicate, function(predicate){
+                                    ig.doc(d.object, function(object){
+                                      d.getSubject = function(){
+                                        // note that this will return undefined
+                                        // if subject of a relation has been 
+                                        // changed without loading the new 
+                                        // subject doc in cache.
+                                        return cache.get(d.subject);
+                                      };
+                                      d.getPredicate = function(){
+                                        return cache.get(d.predicate);
+                                      };
+                                      d.getObject = function(){
+                                        return cache.get(d.object);
+                                      };
+                                      d.toString = function(){
+                                        return "( " + 
+                                      this.getSubject() + " - " + 
+                                      this.getPredicate() + " - " + 
+                                      this.getObject() + 
+                                      " )";
+                                      };
+                                      cache.remove(d._id);
+                                      cache.put(d._id, d);
+                                      l("relation loaded: " + d);
+                                      callback(d);
+                                    });
+                                  });
+                                });
+                              } else if (type === "answer"){
+                                l("answer loaded: " + d._id);
+                                callback(d);
+                              }
+                            },
+                            "error":  couchError("Could not open document - " + id)
                           });
                         }
                       },
@@ -199,19 +224,20 @@
                         require(view, "search needs view");
                         require(callback, "search needs callback");
                         db.view(view, $.extend({}, query, {
-                          success: function(data){ 
-                                     if (!dontNotify) {
-                                       ig.notify("Search results: " + data.rows.length);
-                                     }
-                                     if(data.rows.length === 0){
-                                       callback(false);
-                                     }
-                                     data.rows.forEach(function(row){
-                                       ig.doc(row.id, function(doc){
-                                         callback(doc);
-                                       });
-                                     });
-                                   }
+                          "success": function(data){ 
+                            if (!dontNotify) {
+                              ig.notify("Search results: " + data.rows.length);
+                            }
+                            if(data.rows.length === 0){
+                              callback(false);
+                            }
+                            data.rows.forEach(function(row){
+                              ig.doc(row.id, function(doc){
+                                callback(doc);
+                              });
+                            });
+                          },
+                          "error":  couchError("Could not run search query for " + view)
                         }));
                       },
     notify:           function(text){
@@ -318,19 +344,22 @@
                           return false;
                         }
                         db.saveDoc({
+                          // TODO:
+                          //"_id":    hashUp(val),
                           "type":   "item",
                           // trim, remove repeated whitespace in value string
                           // this is a contentious issue, if this should be done or not
                           "value":  val,
                           "created_at": timestamp()
                         }, {
-                          success:  function(data){
-                                      l("saved new item");
-                                      ig.doc(data.id, function(doc){
-                                        ig.notify("Created: " + doc);
-                                        whenSaved(doc);
-                                      });
-                                    }
+                          "success":  function(data){
+                            l("saved new item");
+                            ig.doc(data.id, function(doc){
+                              ig.notify("Created: " + doc);
+                              whenSaved(doc);
+                            });
+                          },
+                          "error":    couchError("Could not create item '" + val + "'")
                         });
                       },
     deleteDoc:        function(id, whenDeleted, forcingIt){
@@ -351,11 +380,11 @@
                               // search query returned no results
                               ig.doc(id, function(d){
                                 db.removeDoc(d, {
-                                  success: function(data){
-                                             l("deleted " + d);
-                                             ig.notify("Deleted: " + d);
-                                             whenDeleted(d);
-                                           }
+                                  "success": function(data){
+                                    ig.notify("Deleted: " + d);
+                                    whenDeleted(d);
+                                  },
+                                  "error":    couchError("Could not delete " + d)
                                 });
                               });
                             }
@@ -372,13 +401,14 @@
                           d.updated_at = timestamp();
                           l("saving item with new value '" + d.value + "'");
                           db.saveDoc(d, {
-                            success:  function(data){
-                                        l("saved edited document, notifying app");
-                                        ig.doc(data.id, function(item){
-                                          ig.notify("Edited: " + item);
-                                          whenEdited(doc);
-                                        });
-                                      }
+                            "success":  function(data){
+                              l("saved edited document, notifying app");
+                              ig.doc(data.id, function(item){
+                                ig.notify("Edited: " + item);
+                                whenEdited(doc);
+                              });
+                            },
+                            "error":    couchError("Could not edit " + doc)
                           });
                         });
                       },
@@ -403,27 +433,28 @@
                         function makeRelation(){
                           l("subject, predicate and object selected, making relation");
                           db.saveDoc({
-                            "_id":        JSON.stringify(selectedSpo.map(function(spo){
-                                              return spo._id; })),
+                            // TODO:
+                            //"_id":        hashUp(selectedSpo),
                             "type":       "relation",
                             "subject":    selectedSpo[0]._id,
                             "predicate":  selectedSpo[1]._id,
                             "object":     selectedSpo[2]._id,
                             "created_at": timestamp()
                           }, {
-                            success:  function(data){
-                                        $.each(selectedSpo, function(i, item){
-                                          item.igSelectionIndex = 0;
-                                          guiDocUnSelect(item);
-                                        });
-                                        selectedSpo = [];
-                                        ig.doc(data.id, function(relation){
-                                          ig.notify("Created: " + relation);
-                                          ig.saveAnswers(relation, function(){
-                                            l("done saving answers");
-                                          })
-                                        });
-                                      }
+                            "success":  function(data){
+                              $.each(selectedSpo, function(i, item){
+                                item.igSelectionIndex = 0;
+                                guiDocUnSelect(item);
+                              });
+                              selectedSpo = [];
+                              ig.doc(data.id, function(relation){
+                                ig.notify("Created: " + relation);
+                                ig.saveAnswers(relation, function(){
+                                  l("done saving answers");
+                                })
+                              });
+                            },
+                            "error":    couchError("Could not make relation")
                           });
                         }
 
@@ -440,6 +471,8 @@
                                 })
                               ) !== -1) {
                               ig.notify("Sorry, already selected that one.");
+                            } else if (selectedSpo.length === 3){
+                              ig.notify("Can't select more than three");
                             } else {
                               select(doc);
                             }
@@ -455,10 +488,11 @@
                         next(0);
                         function next(i){
                           db.saveDoc(answers[i], {
-                            "success":   function(data){
+                            "success":  function(data){
                               l("saved: " + JSON.stringify(answers[i].query));
                               (i < answers.length - 1)? next(i+1): callback();
-                            }
+                            },
+                            "error":    couchError(JSON.stringify(answers[i].query))
                           });
                         }
                       },
@@ -564,37 +598,45 @@
                         require(loggedOut, "setupLogin needs logout handler");
                         var login = function(){
                           l("Logging in");
-                          $.couch.login($.extend(loginData, {success: loggedIn}));
+                          $.couch.login($.extend(loginData, {
+                            "success":  loggedIn,
+                            "error":    couchError("Could not login")
+                          }));
                         };
                         var logout = function(){
                           l("Logging out");
-                          $.couch.logout({success: loggedOut});
+                          $.couch.logout({
+                            "success":  loggedOut,
+                            "error":    couchError("Could not logout")
+                          });
                         };
 
                         var loginElem; // on clicking which you login/logout
                         $.couch.session({
-                          success: function(res){
-                                     if (res.userCtx.roles.length === 0){
-                                       l("userCtx.roles is empty");
-                                       loginElem = loggedOut();
-                                       loginElem.toggle(login, logout);
-                                     } else {
-                                       l("userCtx.roles is non-empty");
-                                       loginElem = loggedIn();
-                                       loginElem.toggle(logout,login);  
-                                     }
-                                   }
+                          "success":  function(response){
+                            if (response.userCtx.roles.length === 0){
+                              l("userCtx.roles is empty");
+                              loginElem = loggedOut();
+                              loginElem.toggle(login, logout);
+                            } else {
+                              l("userCtx.roles is non-empty");
+                              loginElem = loggedIn();
+                              loginElem.toggle(logout,login);  
+                            }
+                          },
+                          "error":    couchError("Could not connect to database")
                         });
                         return ig;
                       },
     emptyDb:          function(){
                         db.allDocs({
                           include_docs: true,
-                          success:      function(data){
-                                          $.each(data.rows, function(i, row){
-                                            db.removeDoc(row.doc);
-                                          });
-                                        }
+                          "success":  function(data){
+                            $.each(data.rows, function(i, row){
+                              db.removeDoc(row.doc);
+                            });
+                          },
+                          "error":    couchError("Could not empty the database")
                         });
                       }
   });

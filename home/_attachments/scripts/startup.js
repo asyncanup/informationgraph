@@ -161,16 +161,17 @@ $(document).ready(function(){
       // called anyway when the _changes feed comes in
       return false;
     })
-    .delegate(".itemValue", "dblclick", function(){
-      var e = docElem(this);
-      var p;
-      ig.doc(e.attr("doc_id"), function(doc){
-        p = e.parent();
-        e.after($("#itemEditTemplate").tmpl(doc)).remove();
-        findOnPage(doc, p).find("input:first").focus();
-      });
-      return false;
-    })
+    // NOTE: Items are immutable
+    //.delegate(".itemValue", "dblclick", function(){
+      //var e = docElem(this);
+      //var p;
+      //ig.doc(e.attr("doc_id"), function(doc){
+        //p = e.parent();
+        //e.after($("#itemEditTemplate").tmpl(doc)).remove();
+        //findOnPage(doc, p).find("input:first").focus();
+      //});
+      //return false;
+    //})
     .delegate(".docSearch", "click", function(){
       var e = docElem(this);
       ig.linkPlaceholder("#queryRelationList", {
