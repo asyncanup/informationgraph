@@ -1,7 +1,7 @@
 function(doc){
+  // !code _attachments/scripts/shortenItem.js
 
   if (doc.type === "item"){
-    // !code _attachments/scripts/shortenItem.js
 
     var str = shortenItem(doc.value);
 
