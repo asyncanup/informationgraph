@@ -5,6 +5,6 @@
   notifyUI = ->
   cache = new LRUCache 100
   listeners = {}
-  defaultCallback = (whatever)-> 
+  defaultCallback = (whatever)->
     l "defaultCallback: #{whatever}"
 )(jQuery)
