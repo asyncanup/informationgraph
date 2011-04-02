@@ -1,8 +1,11 @@
 (function() {
   $(document).ready(function() {
-    var cl, co, docElem, elemType, exists, findOnPage, ig, onPage, render;
-    cl = function(str) {
+    var co, docElem, elemType, exists, findOnPage, ig, onPage, render;
+    window.cl = function(str) {
       return console.log(str);
+    };
+    window.al = function(str) {
+      return alert(str);
     };
     ig = $.ig;
     render = function(doc, placeholder, template) {
@@ -133,7 +136,6 @@
     co.delegate(".newItem", "submit", function() {
       var input;
       input = $(this.newItemValue);
-      cl(input.val());
       ig.newItem(input.val(), function(doc) {
         $(input).val("");
         /* this line is needed for _changes to affect this new doc */
@@ -144,7 +146,6 @@
     co.delegate(".docSelect", "click", function() {
       var e, id;
       e = docElem(this);
-      cl(e);
       id = e.attr("doc_id");
       ig.selectDoc(id);
       return false;
@@ -159,7 +160,6 @@
     return co.delegate(".docSearch", "click", function() {
       var e, id;
       e = docElem(this);
-      cl(e);
       id = e.attr("doc_id");
       ig.linkPlaceholder("#queryRelationList", {
         view: "home/relations",

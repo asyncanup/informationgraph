@@ -1,6 +1,8 @@
 $(document).ready ->
   # TODO: #itemList should have all items instead of excluding the ones already on the page
-  cl = (str)-> console.log str
+  window.cl = (str)-> console.log str
+  window.al = (str)-> alert str
+
   ig = $.ig
   
   render = (doc, placeholder, template)->
@@ -80,7 +82,7 @@ $(document).ready ->
           .text unSelectText
   )
 
-  ig.linkPlaceholder "#itemList"
+  ig.linkPlaceholder "#itemList",
     view:         "home/allItems"
     beforeRender: -> $("#itemList").empty()
     render:       (doc)-> render doc, "#itemList", "#itemTemplate"
@@ -88,7 +90,7 @@ $(document).ready ->
   $("#itemFilter").change ->
     val = shortenItem $(this).val()
     if val
-      ig.linkPlaceholder "#itemList"
+      ig.linkPlaceholder "#itemList",
         view:         "home/itemSuggestions"
         query:
           startkey:   val
@@ -96,7 +98,7 @@ $(document).ready ->
         beforeRender: -> $("#itemList").empty()
         render:       (doc)-> render doc, "#itemList", "#itemTemplate"
     else
-      ig.linkPlaceholder "#itemList"
+      ig.linkPlaceholder "#itemList",
         view:         "home/allItems"
         query:
           startkey:   ""
@@ -107,7 +109,6 @@ $(document).ready ->
   co = $ "#content"
   co.delegate ".newItem", "submit", ->
     input = $ this.newItemValue
-    cl input.val()
     ig.newItem input.val(), (doc)->
       $(input).val("")
       ### this line is needed for _changes to affect this new doc ###
@@ -115,7 +116,6 @@ $(document).ready ->
     false
   co.delegate ".docSelect", "click", ->
     e = docElem this
-    cl e
     id = e.attr "doc_id"
     ig.selectDoc id
     false
@@ -126,9 +126,8 @@ $(document).ready ->
     false
   co.delegate ".docSearch", "click", ->
     e = docElem this
-    cl e
     id = e.attr "doc_id"
-    ig.linkPlaceholder "#queryRelationList"
+    ig.linkPlaceholder "#queryRelationList",
       view:         "home/relations"
       query:
         startkey: [id]

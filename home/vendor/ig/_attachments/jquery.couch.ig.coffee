@@ -1,4 +1,5 @@
 do (jQuery)->
+  # TODO: searching for an spo doesn't retain its igSelectionIndex highlighting
   $ = jQuery
   ig = $.ig ?= {}
 
@@ -12,9 +13,19 @@ do (jQuery)->
 
   defaultCallback = (whatever)-> l "defaultCallback: #{whatever}"
   refreshDoc = (whatever)-> l "default refreshDoc: #{doc}"
+  handleGuiSelection = (doc)->
+    throw "handleGuiSelection needs doc" unless doc?
+    if doc.igSelectionIndex
+      guiDocSelect doc, doc.igSelectionIndex
+    else
+      guiDocUnSelect doc
+    if doc.type is "relation"
+      handleGuiSelection doc.getSubject()
+      handleGuiSelection doc.getPredicate()
+      handleGuiSelection doc.getObject()
   guiDocSelect = (doc)-> l "default guiDocSelect: #{doc}"
   guiDocUnSelect = (doc)-> l "default guiDocUnSelect: #{doc}"
-  l = (str)-> console.log "ig: #{val}" if window.console and debugMode
+  l = (str)-> window.console.log "ig: #{str}" if window.console and debugMode
   timestamp = -> (new Date()).getTime()
   couchDoc = (doc)->
     d = $.extend {}, doc
@@ -58,6 +69,8 @@ do (jQuery)->
         for d in feed.results
           if cache.find d.id
             if d.deleted
+              ### the deleted property is what couchdb 
+                  sets in feed results. not mine ###
               cache.remove d.id
               l "#{d.id} deleted"
               ig.refresh
@@ -65,13 +78,11 @@ do (jQuery)->
                 _deleted: true
                 toString: -> this._id
             else
-              ig.doc(
-                d.id
+              ig.doc d.id,
                 (doc)->
                   l "#{doc} updated"
                   ig.refresh doc
                 true
-              )
       l "_changes feed set up"
       ig
 
@@ -167,11 +178,9 @@ do (jQuery)->
             l "refresh: no results in #{view} query"
           else
             render doc
-            if doc.igSelectionIndex
-              guiDocSelect doc, doc.igSelectionIndex
-            else
-              guiDocUnSelect doc
+            handleGuiSelection doc
             l "refresh: rendered #{doc}"
+
     switch typeof arg
       when "function"
         refreshDoc = arg
@@ -179,16 +188,17 @@ do (jQuery)->
       when "string"
         l "refresh: #{arg}"
         refreshPlaceholder arg
-      when "object" and arg.length? and arg.push?
-        refreshPlaceholder p for p in arg
-      when "object" and arg.type?
-        l "refreshDoc: #{arg}"
-        if arg.igSelectionIndex
-          guiDocSelect arg, arg.igSelectionIndex
-        else
-          guiDocUnSelect arg
+      when "object"
+        if arg.length? and arg.push?
+          refreshPlaceholder p for p in arg
+        else if arg.type?
+          l "refreshDoc: #{arg}"
+          refreshDoc arg
+          handleGuiSelection arg
       else
         l "refresh: everything"
+        al JSON.stringify arg
+        window.el = arg
         refreshPlaceholder p for p of listeners
     ig
 
@@ -213,7 +223,7 @@ do (jQuery)->
 
   ig.newItem = (val, whenSaved)->
     whenSaved ?= defaultCallback
-    val = shortenItem val
+    val = shortenItem val,
       onlyTrim: true
     unless val
       ig.notify "Please enter a value"
@@ -316,10 +326,16 @@ do (jQuery)->
             ig.notify "Can't select more than 3"
           else
             select doc
+        else
+          select doc
       ig
 
   ig.saveAnswers = (relation, callback)->
     # TODO: do away with this
+    R = prepare relation
+    R.up = false
+    more R, []
+
     answers = ig.makeAnswers relation
     l "saving answers to db"
     next 0
@@ -334,13 +350,112 @@ do (jQuery)->
   ig.makeAnswers = (relation)->
     prepare = (spo)->
       obj = $.extend {}, spo
+      obj.currentIndex = obj.nullIndex = -1
+      obj.isNull = false
+      if obj.type is "relation"
+        obj[0] = prepare obj.getSubject()
+        obj[1] = prepare obj.getPredicate()
+        obj[2] = prepare obj.getObject()
+        obj[0].up = obj[1].up = obj[2].up = obj
+      obj
 
+    newAnswer = (qArr, spo)->
+      query:    qArr
+      type:     "answer"
+      relation: relation._id
+      answer:   spo._id
 
+    shiftNull = (r, answers)->
+      if r is false
+        ### meaning shiftNull was called on R.up (boundary condition) ###
+        l "done making answers"
+      else
+        r.currentIndex = 0
+        if r.nullIndex is -1
+          r.nullIndex = 0
+          r[0].isNull = true
+          answers = triggerAnswer answers
+          answers = more r, answers
+        else if r.nullIndex < 2
+          r[r.nullIndex].isNull = false
+          r.nullIndex += 1
+          r[r.nullIndex].isNull = true
+          answers = triggerAnswer answers
+          answers = more r, answers
+        else if r.nullIndex is 2
+          r[r.nullIndex].isNull = false
+          r.nullIndex = -1
+          answers = shiftNull r.up, answers
+      answers
 
+    triggerAnswer = (answers)->
+      qArr = ig.queryArr R
+      l "#{R[R.nullIndex]} answers #{JSON.stringify qArr}"
+      answers.push newAnswer qArr, R[R.nullIndex]
+      answers
 
+    more = (r, answers)->
+      if r.nullIndex is -1
+        answers = shiftNull r, answers
+      else if r.currentIndex is r.nullIndex
+        r.currentIndex += 1
+        answers = more r, answers
+      else if r.currentIndex is 3
+        answers = shiftNull r, answers
+      else if r[r.currentIndex].type is "item"
+        r.currentIndex += 1
+        answers = more r, answers
+      else if r[r.currentIndex].type is "relation"
+        answers = more r[r.currentIndex], answers
+      answers
+  
+  ig.queryArr = (r)->
+    if r.isNull
+      null
+    else if r.type is "item"
+      r.toString()
+    else if r.type is "relation"
+      return  (ig.queryArr r[n] for n in [0,1,2])
 
+  ig.setupLogin = (loginOptions, loggedIn, loggedOut)->
+    throw "setupLogin needs login handler" unless loggedIn?
+    throw "setupLogin needs logout handler" unless loggedOut?
+    loginOptions ?= {}
+    loginData ?=
+      name: "_"
+      password: "_"
+    login = ->
+      l "Logging in"
+      $.couch.login $.extend loginData,
+        success: loggedIn
+        error: couchError "Could not login"
+    logout = ->
+      l "Logging out"
+      $.couch.logout
+        success: loggedOut
+        error: couchError "Could not logout"
 
+    loginElem = null
+    # ISSUE: not ok with handling a dom element here
+    $.couch.session
+      success: (response)->
+        if response.userCtx.roles.length is 0
+          l "useCtx.roles is empty"
+          loginElem = loggedOut()
+          loginElem.toggle login, logout
+        else
+            l "userCtx.roles is non-empty"
+            loginElem = loggedIn()
+            loginElem.toggle logout, login
+      error: couchError "Could not connect to database"
+    ig
 
-
+  ig.emptyDb = ->
+    db.allDocs
+      include_docs: true
+      success: (data)->
+        unless row.id.substr(0, 8) is "_design/"
+          db.removeDoc row.doc for row in data.rows
+      error: couchError "Could not empty the database"
 
 
