@@ -24,8 +24,8 @@
     exists = function(elem) {
       return $(elem).length !== 0;
     };
-    onPage = function(doc) {
-      return exists(findOnPage(doc));
+    onPage = function(doc, placeholder) {
+      return exists(findOnPage(doc, placeholder));
     };
     elemType = function(e) {
       var type, types, _i, _len;

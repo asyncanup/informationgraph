@@ -1,5 +1,5 @@
 $(document).ready ->
-  # TODO: #itemList should have all items instead of excluding the ones already on the page
+  # TODO: 
   window.cl = (str)-> console.log str
   window.al = (str)-> alert str
 
@@ -20,8 +20,8 @@ $(document).ready ->
   exists = (elem)->
     $(elem).length isnt 0
 
-  onPage = (doc)->
-    exists findOnPage doc
+  onPage = (doc, placeholder)->
+    exists findOnPage doc, placeholder
 
   elemType = (e)->
     types = [

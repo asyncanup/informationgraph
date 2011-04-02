@@ -93,7 +93,7 @@
         l("db set to " + dbname);
         hose = db.changes();
         hose.onChange(function(feed) {
-          var d, _i, _len, _ref, _results;
+          var d, doc, _i, _len, _ref, _results;
           l("received changes");
           _ref = feed.results;
           _results = [];
@@ -104,15 +104,11 @@
                 if (d.deleted) {
                   /* the deleted property is what couchdb
                       sets in feed results. not mine */
-                  cache.remove(d.id);
-                  l("" + d.id + " deleted");
-                  return ig.refresh({
-                    _id: d.id,
-                    _deleted: true,
-                    toString: function() {
-                      return this._id;
-                    }
-                  });
+                  doc = cache.get(d.id);
+                  l("" + doc + " deleted");
+                  doc._deleted = true;
+                  ig.refresh(doc);
+                  return cache.remove(doc.id);
                 } else {
                   return ig.doc(d.id, function(doc) {
                     l("" + doc + " updated");
@@ -184,12 +180,12 @@
         });
       }
     };
-    ig.search = function(view, query, callback, dontNotify) {
+    ig.search = function(view, query, resultDocCallback, noResultsCallback, dontNotify) {
       if (view == null) {
         throw "search needs view";
       }
-      if (callback == null) {
-        throw "search needs callback";
+      if (noResultsCallback == null) {
+        throw "search needs resultDocCallback";
       }
       query != null ? query : query = {};
       return db.view(view, $.extend(query, {
@@ -197,15 +193,16 @@
           var row, _i, _len, _ref, _results;
           if (!dontNotify) {
             ig.notify("Search results: " + data.rows.length);
-            if (data.rows.length === 0) {
-              callback(false);
-            }
+          }
+          if (data.rows.length === 0) {
+            return typeof noResultsCallback == "function" ? noResultsCallback() : void 0;
+          } else {
             _ref = data.rows;
             _results = [];
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {
               row = _ref[_i];
               _results.push(ig.doc(row.id, function(doc) {
-                return callback(doc);
+                return resultDocCallback(doc);
               }));
             }
             return _results;
@@ -222,7 +219,7 @@
         throw "gui notification handler not specified";
       }
       ig.notify = function(text) {
-        l(text);
+        l("notify: " + text);
         return f(text);
       };
       l("gui notification handler set up");
@@ -242,25 +239,22 @@
     ig.refresh = function(arg) {
       var p, refreshPlaceholder, _i, _len;
       refreshPlaceholder = function(placeholder) {
-        var options, query, render, view, _ref;
+        var options;
         if (listeners[placeholder] == null) {
           l("refresh: " + placeholder + " is not registered");
           return false;
         } else {
           options = listeners[placeholder];
-          _ref = [options.query, options.render, options.view], query = _ref[0], render = _ref[1], view = _ref[2];
           l("refresh: refreshing " + placeholder);
           if (typeof options.beforeRender == "function") {
             options.beforeRender();
           }
-          return ig.search(view, query, function(doc) {
-            if (!doc) {
-              return l("refresh: no results in " + view + " query");
-            } else {
-              render(doc);
-              handleGuiSelection(doc);
-              return l("refresh: rendered " + doc);
-            }
+          return ig.search(options.view, options.query, function(doc) {
+            options.render(doc);
+            handleGuiSelection(doc);
+            return l("refresh: rendered " + doc);
+          }, function() {
+            return l("refresh: no results for the " + options.view + " query in " + placeholder);
           });
         }
       };
@@ -279,16 +273,15 @@
               p = arg[_i];
               refreshPlaceholder(p);
             }
-          } else if (arg.type != null) {
+          } else if (arg._deleted || (arg.type != null)) {
             l("refreshDoc: " + arg);
             refreshDoc(arg);
             handleGuiSelection(arg);
+            ig.notify("" + arg + " got deleted");
           }
           break;
         default:
           l("refresh: everything");
-          al(JSON.stringify(arg));
-          window.el = arg;
           for (p in listeners) {
             refreshPlaceholder(p);
           }
@@ -351,35 +344,37 @@
       }
     };
     ig.deleteDoc = function(id, whenDeleted, forcingIt) {
+      var removeNow;
       if (id == null) {
         throw "deleteDoc needs id";
       }
       whenDeleted != null ? whenDeleted : whenDeleted = defaultCallback;
-      if (!forcingIt) {
+      removeNow = function(id) {
+        return ig.doc(id, function(doc) {
+          return db.removeDoc(doc, {
+            success: function(data) {
+              ig.notify("Deleted: " + doc);
+              return whenDeleted(doc);
+            },
+            error: couchError("Could not delete " + doc)
+          });
+        });
+      };
+      if (forcingIt) {
+        return removeNow(id);
+      } else {
         return ig.search("home/relations", {
           startkey: [id],
           endkey: [id, {}],
           limit: 1
         }, function(doc) {
-          if (doc) {
-            ig.notify("Delete dependent relations first: " + doc);
-            return ig.doc(id, function(d) {
-              return refreshDoc(d);
-            });
-          } else {
-            return ig.doc(id, function(d) {
-              return db.removeDoc(d, {
-                success: function(data) {
-                  ig.notify("Deleted: " + d);
-                  return whenDeleted(d);
-                },
-                error: couchError("Could not delete " + d)
-              });
-            });
-          }
+          ig.notify("Delete dependent relations first: " + doc);
+          return ig.doc(id, function(d) {
+            return refreshDoc(d);
+          });
+        }, function() {
+          return removeNow(id);
         });
-      } else {
-        ;
       }
     };
     ig.editItem = function(id, newVal, whenEdited) {
@@ -481,14 +476,8 @@
       return ig;
     };
     ig.saveAnswers = function(relation, callback) {
-      var R, answers, next;
-      R = prepare(relation);
-      R.up = false;
-      more(R, []);
-      answers = ig.makeAnswers(relation);
-      l("saving answers to db");
-      next(0);
-      return next = function(i) {
+      var answers, next;
+      next = function(i) {
         return db.saveDoc(answers[i], {
           success: function(data) {
             l("saved: " + (JSON.stringify(answers[i].query)));
@@ -501,9 +490,12 @@
           error: couchError(JSON.stringify(answers[i].query))
         });
       };
+      answers = ig.makeAnswers(relation);
+      l("saving answers to db");
+      return next(0);
     };
     ig.makeAnswers = function(relation) {
-      var more, newAnswer, prepare, shiftNull, triggerAnswer;
+      var R, more, newAnswer, prepare, shiftNull, triggerAnswer;
       prepare = function(spo) {
         var obj;
         obj = $.extend({}, spo);
@@ -557,7 +549,7 @@
         answers.push(newAnswer(qArr, R[R.nullIndex]));
         return answers;
       };
-      return more = function(r, answers) {
+      more = function(r, answers) {
         if (r.nullIndex === -1) {
           answers = shiftNull(r, answers);
         } else if (r.currentIndex === r.nullIndex) {
@@ -573,6 +565,9 @@
         }
         return answers;
       };
+      R = prepare(relation);
+      R.up = false;
+      return more(R, []);
     };
     ig.queryArr = function(r) {
       var n, _i, _len, _ref, _results;
@@ -639,15 +634,13 @@
         include_docs: true,
         success: function(data) {
           var row, _i, _len, _ref, _results;
-          if (row.id.substr(0, 8) !== "_design/") {
-            _ref = data.rows;
-            _results = [];
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              row = _ref[_i];
-              _results.push(db.removeDoc(row.doc));
-            }
-            return _results;
+          _ref = data.rows;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            row = _ref[_i];
+            _results.push(row.id.substr(0, 8) !== "_design/" ? db.removeDoc(row.doc) : void 0);
           }
+          return _results;
         },
         error: couchError("Could not empty the database")
       });

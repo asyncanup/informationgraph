@@ -1,5 +1,5 @@
 do (jQuery)->
-  # TODO: searching for an spo doesn't retain its igSelectionIndex highlighting
+  # TODO: 
   $ = jQuery
   ig = $.ig ?= {}
 
@@ -39,12 +39,12 @@ do (jQuery)->
         delete d.getObject
         d
       when "answer"
-        # TODO:
+        # TODO: decide on answer representation first
         d
       else
         d
   hashUp = (arg)->
-    # TODO:
+    # TODO: hashUp all ids, no exceptions
 
   couchError = (err)->
     (response)-> ig.notify "#{err}: #{response.reason}"
@@ -71,12 +71,11 @@ do (jQuery)->
             if d.deleted
               ### the deleted property is what couchdb 
                   sets in feed results. not mine ###
-              cache.remove d.id
-              l "#{d.id} deleted"
-              ig.refresh
-                _id: d.id
-                _deleted: true
-                toString: -> this._id
+              doc = cache.get(d.id)
+              l "#{doc} deleted"
+              doc._deleted = true
+              ig.refresh doc
+              cache.remove doc.id
             else
               ig.doc d.id,
                 (doc)->
@@ -125,27 +124,27 @@ do (jQuery)->
               callback d
         error: couchError "could not open document: #{id}"
 
-  ig.search = (view, query, callback, dontNotify)->
-    # TODO: make it accept 2 callbacks, one for docs and one for no results case
+  ig.search = (view, query, resultDocCallback, noResultsCallback, dontNotify)->
     throw "search needs view" unless view?
-    throw "search needs callback" unless callback?
+    throw "search needs resultDocCallback" unless noResultsCallback?
     query ?= {}
     db.view view,
       $.extend query,
         success: (data)->
-          unless dontNotify
-            ig.notify "Search results: #{data.rows.length}"
-            callback false if data.rows.length is 0
+          ig.notify "Search results: #{data.rows.length}" unless dontNotify
+          if data.rows.length is 0
+            noResultsCallback?()
+          else
             for row in data.rows
               ig.doc row.id, (doc)->
-                callback doc
+                resultDocCallback doc
         error: couchError "Could not run search query for #{view}"
 
   ig.notify = (text)-> l text
   ig.notification = (f)->
     throw "gui notification handler not specified" unless f?
     ig.notify = (text)->
-      l text
+      l "notify: #{text}"
       f text
     l "gui notification handler set up"
     ig
@@ -164,22 +163,14 @@ do (jQuery)->
         false
       else
         options = listeners[placeholder]
-        # TODO: remove these redundant vars
-        [query, render, view] = [
-          options.query
-          options.render
-          options.view
-        ]
         l "refresh: refreshing #{placeholder}"
         options.beforeRender?()
-        # TODO: use the noResults callback of ig.search
-        ig.search view, query, (doc)->
-          unless doc
-            l "refresh: no results in #{view} query"
-          else
-            render doc
+        ig.search options.view, options.query,
+          (doc)->
+            options.render doc
             handleGuiSelection doc
             l "refresh: rendered #{doc}"
+          -> l "refresh: no results for the #{options.view} query in #{placeholder}"
 
     switch typeof arg
       when "function"
@@ -191,14 +182,13 @@ do (jQuery)->
       when "object"
         if arg.length? and arg.push?
           refreshPlaceholder p for p in arg
-        else if arg.type?
+        else if arg._deleted or arg.type?
           l "refreshDoc: #{arg}"
           refreshDoc arg
           handleGuiSelection arg
+          ig.notify "#{arg} got deleted"
       else
         l "refresh: everything"
-        al JSON.stringify arg
-        window.el = arg
         refreshPlaceholder p for p of listeners
     ig
 
@@ -244,25 +234,26 @@ do (jQuery)->
   ig.deleteDoc = (id, whenDeleted, forcingIt)->
     throw "deleteDoc needs id" unless id?
     whenDeleted ?= defaultCallback
-    if not forcingIt
+    removeNow = (id)->
+      ig.doc id, (doc)->
+        db.removeDoc doc,
+          success: (data)->
+            ig.notify "Deleted: #{doc}"
+            whenDeleted doc
+          error: couchError "Could not delete #{doc}"
+
+    if forcingIt
+      removeNow id
+    else
       ig.search "home/relations",
         startkey: [id]
         endkey:   [id, {}]
         limit:    1
         (doc)->
-          if doc
-            ig.notify "Delete dependent relations first: #{doc}"
-            ig.doc id, (d)->
-              refreshDoc d
-          else
-            ig.doc id, (d)->
-              db.removeDoc d,
-                success: (data)->
-                  ig.notify "Deleted: #{d}"
-                  whenDeleted d
-                error: couchError "Could not delete #{d}"
-    else
-      #TODO: implement the forcingIt version
+          ig.notify "Delete dependent relations first: #{doc}"
+          ig.doc id, (d)->
+            refreshDoc d
+        -> removeNow id
 
   ig.editItem = (id, newVal, whenEdited)->
     throw "editItem needs id" unless id?
@@ -332,14 +323,6 @@ do (jQuery)->
 
   ig.saveAnswers = (relation, callback)->
     # TODO: do away with this
-    R = prepare relation
-    R.up = false
-    more R, []
-
-    answers = ig.makeAnswers relation
-    l "saving answers to db"
-    next 0
-    
     next = (i)->
       db.saveDoc answers[i],
         success: (data)->
@@ -347,6 +330,10 @@ do (jQuery)->
           if i < answers.length - 1 then next i+1 else callback()
         error: couchError JSON.stringify answers[i].query
 
+    answers = ig.makeAnswers relation
+    l "saving answers to db"
+    next 0
+    
   ig.makeAnswers = (relation)->
     prepare = (spo)->
       obj = $.extend {}, spo
@@ -409,6 +396,10 @@ do (jQuery)->
         answers = more r[r.currentIndex], answers
       answers
   
+    R = prepare relation
+    R.up = false
+    more R, []
+
   ig.queryArr = (r)->
     if r.isNull
       null
@@ -454,8 +445,8 @@ do (jQuery)->
     db.allDocs
       include_docs: true
       success: (data)->
-        unless row.id.substr(0, 8) is "_design/"
-          db.removeDoc row.doc for row in data.rows
+        for row in data.rows
+          db.removeDoc row.doc unless row.id.substr(0, 8) is "_design/"
       error: couchError "Could not empty the database"
 
 
