@@ -6,6 +6,5 @@
   ".*\\.swo$",
   ".*\\.bak$",
   ".couchapprc",
-  "*\\.coffee$",
   ".watchthecoffee.sh"
 ]

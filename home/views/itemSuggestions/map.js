@@ -1,14 +1,12 @@
-function(doc){
+(function(doc) {
   // !code _attachments/scripts/shortenItem.js
-
-  if (doc.type === "item"){
-
-    var str = shortenItem(doc.value);
-
-    // emit keys
-    for (i = 0; i < str.length; i += 1){
-      emit(str.slice(i), null);
+  ;  var i, str, _ref, _results;
+  if (doc.type === "item") {
+    str = shortenItem(doc.value);
+    _results = [];
+    for (i = 0, _ref = str.length; (0 <= _ref ? i < _ref : i > _ref); (0 <= _ref ? i += 1 : i -= 1)) {
+      _results.push(emit(str.slice(i), null));
     }
-
+    return _results;
   }
-}
+});

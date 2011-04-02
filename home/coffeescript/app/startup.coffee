@@ -1,5 +1,10 @@
+###
+   App using Information Graph js library
+###
+
 $(document).ready ->
   # TODO: 
+
   window.cl = (str)-> console.log str
   window.al = (str)-> alert str
 

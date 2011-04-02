@@ -1,8 +1,7 @@
-function(doc){
-  if (doc.type === "relation"){
-    // think about adding doc.subject.value before doc.subject here
-    emit ([doc.subject, "s"], null); 
-    emit ([doc.predicate, "p"], null); 
-    emit ([doc.object, "o"], null);
+(function(doc) {
+  if (doc.type === "relation") {
+    emit([doc.subject, "s"], null);
+    emit([doc.predicate, "p"], null);
+    return emit([doc.object, "o"], null);
   }
-};
+});

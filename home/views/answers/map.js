@@ -1,5 +1,5 @@
-function(doc){
-  if(doc.type === "answer"){
-    emit ([doc.query, doc.relation], doc.answer);
+(function(doc) {
+  if (doc.type === "answer") {
+    return emit([doc.query, doc.relation], doc.answer);
   }
-}
+});

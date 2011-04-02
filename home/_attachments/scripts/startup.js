@@ -1,5 +1,7 @@
 (function() {
-  $(document).ready(function() {
+  /*
+     App using Information Graph js library
+  */  $(document).ready(function() {
     var co, docElem, elemType, exists, findOnPage, ig, onPage, render;
     window.cl = function(str) {
       return console.log(str);
