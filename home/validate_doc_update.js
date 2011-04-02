@@ -41,4 +41,6 @@ function (newDoc, savedDoc, userCtx){
     require("answer");
     require("relation");
   }
+
+  // TODO: can't edit docs, they're immutable
 }

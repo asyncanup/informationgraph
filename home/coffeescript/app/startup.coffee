@@ -29,12 +29,7 @@ $(document).ready ->
     exists findOnPage doc, placeholder
 
   elemType = (e)->
-    types = [
-      "item"
-      "spo"
-      "relation"
-    ]
-    for type in types
+    for type in ["item", "spo", "relation"]
       return type if e.hasClass type
   
   ig.debug "start"
@@ -140,3 +135,20 @@ $(document).ready ->
       beforeRender: -> $("#queryRelationList").empty()
       render:       (doc)-> render doc, "#queryRelationList", "#relationTemplate"
     false
+  # NOTE: Docs are considered immutable
+  #co.delegate ".itemValue", dblclick, ->
+    #e = docElem this
+    #id = e.attr "doc_id"
+    #ig.doc id, (doc)->
+      #p = e.parent()
+      #e.after $("itemEditTemplate").tmpl doc
+      #e.remove
+      #findOnPage(doc, p).find("input:first").focus()
+    #false
+  #co.delegate ".itemEditForm", "submit", ->
+    #e = docElem this
+    #id = e.attr "doc_id"
+    #input = $(this).find "input.itemInput"
+    #val = shortenItem input.val(), onlyTrim: true
+    #ig.editItem id, val
+  #false

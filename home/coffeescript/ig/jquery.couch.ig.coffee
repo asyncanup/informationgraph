@@ -20,31 +20,31 @@ do (jQuery)->
     else
       guiDocUnSelect doc
     if doc.type is "relation"
-      handleGuiSelection doc.getSubject()
-      handleGuiSelection doc.getPredicate()
-      handleGuiSelection doc.getObject()
+      handleGuiSelection doc.subject
+      handleGuiSelection doc.predicate
+      handleGuiSelection doc.object
   guiDocSelect = (doc)-> l "default guiDocSelect: #{doc}"
   guiDocUnSelect = (doc)-> l "default guiDocUnSelect: #{doc}"
   l = (str)-> window.console.log "ig: #{str}" if window.console and debugMode
   timestamp = -> (new Date()).getTime()
+  igDoc = (d)->
+    d.igSelectionIndex = 0
+    switch d.type
+      when "item"
+        d.toString = -> this.value
+      when "relation"
+        d.toString = ->
+          "( #{igDoc d.subject} - #{igDoc d.predicate} - #{igDoc d.object} )"
+    d
   couchDoc = (doc)->
     d = $.extend {}, doc
     delete d.toString
     delete d.igSelectionIndex
-    switch d.type
-      when "item" then d
-      when "relation"
-        delete d.getSubject
-        delete d.getPredicate
-        delete d.getObject
-        d
-      when "answer"
-        # TODO: decide on answer representation first
-        d
-      else
-        d
-  hashUp = (arg)->
-    # TODO: hashUp all ids, no exceptions
+    if d.type is "relation"
+      d.subject = couchDoc d.subject
+      d.predicate = couchDoc d.predicate
+      d.object = couchDoc d.object
+    d
 
   couchError = (err)->
     (response)-> ig.notify "#{err}: #{response.reason}"
@@ -93,35 +93,11 @@ do (jQuery)->
     else
       db.openDoc id,
         success: (d)->
-          d.igSelectionIndex = 0
-          ### about whether this doc
-          has been selected in GUI ###
-          switch d.type
-            when "item"
-              d.toString = -> this.value
-              cache.remove d._id
-              cache.put d._id, d
-              l "item loaded: #{d}"
-              callback d
-            when "relation"
-              ig.doc d.subject, (subject)->
-                ig.doc d.predicate, (predicate)->
-                  ig.doc d.subject, (object)->
-                    d.getSubject = ->
-                      cache.get d.subject
-                    d.getPredicate = ->
-                      cache.get d.predicate
-                    d.getObject = ->
-                      cache.get d.object
-                    d.toString = ->
-                      "( #{this.getSubject()} - #{this.getPredicate()} - #{this.getObject()} )"
-                    cache.remove d._id
-                    cache.put d._id, d
-                    l "relation loaded: #{d}"
-                    callback d
-            when "answer"
-              l "answer loaded: #{d._id}"
-              callback d
+          if d.type in ["item", "relation"]
+            cache.remove d._id
+            cache.put d._id, igDoc d
+            l "#{d.type} fetched: #{d}"
+            callback d
         error: couchError "could not open document: #{id}"
 
   ig.search = (view, query, resultDocCallback, noResultsCallback, dontNotify)->
@@ -291,9 +267,9 @@ do (jQuery)->
         l "subject, predicate and object selected, making relation"
         relation =
           type: "relation"
-          subject: selectedSpo[0]._id
-          predicate: selectedSpo[1]._id
-          object: selectedSpo[2]._id
+          subject: couchDoc selectedSpo[0]
+          predicate: couchDoc selectedSpo[1]
+          object: couchDoc selectedSpo[2]
           created: timestamp()
         db.saveDoc relation,
           success: (data)->

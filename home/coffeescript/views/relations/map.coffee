@@ -1,5 +1,5 @@
 (doc)->
   if doc.type is "relation"
-    emit [doc.subject, "s"], null
-    emit [doc.predicate, "p"], null
-    emit [doc.object, "o"], null
+    emit [doc.subject._id, "s"], null
+    emit [doc.predicate._id, "p"], null
+    emit [doc.object._id, "o"], null

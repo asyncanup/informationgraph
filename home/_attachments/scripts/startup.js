@@ -30,10 +30,10 @@
       return exists(findOnPage(doc, placeholder));
     };
     elemType = function(e) {
-      var type, types, _i, _len;
-      types = ["item", "spo", "relation"];
-      for (_i = 0, _len = types.length; _i < _len; _i++) {
-        type = types[_i];
+      var type, _i, _len, _ref;
+      _ref = ["item", "spo", "relation"];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        type = _ref[_i];
         if (e.hasClass(type)) {
           return type;
         }

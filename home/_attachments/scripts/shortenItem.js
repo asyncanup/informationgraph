@@ -1,25 +1,27 @@
-function shortenItem(str, options){
-  options = options || {};
-  options.onlyTrim = options.onlyTrim || false;
-
-  // trim and remove pointless whitespace
-  // ISSUE: should we do this?
-  // if options.onlyTrim is true, then the trimmed string directly returned without shortening it further
-  str = str.trim().replace(/\s+/g, ' ');
-  if (options.onlyTrim) return str;
-
-  // remove all consecutive duplicates
-  var lastChar = str.charAt(0);
-  for (var i = 1; i < str.length; i += 1){
-    if (str.charAt(i) === lastChar) {
-      str = str.replace(lastChar, '');
-      i -= 1;
-    }
-    lastChar = str.charAt(i);
+var shortenItem;
+shortenItem = function(str, options) {
+  var i, l, lastChar;
+  options != null ? options : options = {};
+  if (str == null) {
+    throw "shortenItem needs str";
   }
-
-  // remove vowels and spaces
-  str = str.replace(/[aeiou ]/g, ''); 
-
-  return str;
-}
+  str = str.trim().replace(/\s+/g, ' ');
+  if (options.onlyTrim) {
+    return str;
+  } else {
+    i = 1;
+    lastChar = str.charAt(0);
+    l = str.length;
+    while (i < l) {
+      if (str.charAt(i) === lastChar) {
+        str = str.substr(0, i) + str.slice(i).replace(lastChar, '');
+        i -= 1;
+        l -= 1;
+      }
+      lastChar = str.charAt(i);
+      i += 1;
+    }
+    str = str.replace(/[aeiou ]/g, '');
+    return str;
+  }
+};

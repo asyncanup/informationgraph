@@ -28,11 +28,7 @@
         </form>
       </div>
       <div id="main">
-        <div class="center">
-          <div id="subjectRelationList"></div>
-          <div id="queryRelationList"></div>
-          <div id="objectRelationList"></div>
-        </div>
+        <div id="queryRelationList"></div>
       </div>
     </div>
 
@@ -45,7 +41,7 @@
       <div class="docSelect" title="Select item">
         <span class="optionText">-</span>
       </div>
-      <div class="itemValue" title="Double Click to edit">
+      <div class="itemValue" title="Double Click for delete option">
         <span class="docSearch" title="Search for this item">${value}</span>
       </div> 
     </div>
@@ -55,7 +51,7 @@
       <div class="docDelete" title="Delete">x</div>
       <div class="itemEdit">
         <form class="itemEditForm">
-          <input class="itemInput" title="Enter new value" value="${value}"/>
+          <input disabled="disabled" class="itemInput" value="${value}"/>
         </form>
       </div>
     </div>
@@ -63,9 +59,9 @@
   <script id="relationTemplate" type="text/x-jquery-tmpl">
     <div doc_id="${_id}" class="relation">
       <table><tr>
-        <td class="subject">{{tmpl(getSubject()) "#spoTemplate"}}</td>
-        <td class="predicate">{{tmpl(getPredicate()) "#spoTemplate"}}</td>
-        <td class="object">{{tmpl(getObject()) "#spoTemplate"}}</td>
+        <td class="subject">{{tmpl(subject) "#spoTemplate"}}</td>
+        <td class="predicate">{{tmpl(predicate) "#spoTemplate"}}</td>
+        <td class="object">{{tmpl(object) "#spoTemplate"}}</td>
         <td class="relationSelect docSelect">
           <div class="relationSelectButton" title="Select relation">
             <span class="optionText">-</span>
