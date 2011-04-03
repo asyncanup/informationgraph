@@ -47,7 +47,7 @@ do (jQuery)->
     d
 
   couchError = (err)->
-    (response)-> ig.notify "#{err}: #{response.reason}"
+    (response, id, reason)-> ig.notify "#{err}: #{reason}"
 
   ig.debug = (cmd)->
     if cmd?
@@ -296,93 +296,6 @@ do (jQuery)->
         else
           select doc
       ig
-
-  ig.saveAnswers = (relation, callback)->
-    # TODO: do away with this
-    next = (i)->
-      db.saveDoc answers[i],
-        success: (data)->
-          l "saved: #{JSON.stringify answers[i].query}"
-          if i < answers.length - 1 then next i+1 else callback()
-        error: couchError JSON.stringify answers[i].query
-
-    answers = ig.makeAnswers relation
-    l "saving answers to db"
-    next 0
-    
-  ig.makeAnswers = (relation)->
-    prepare = (spo)->
-      obj = $.extend {}, spo
-      obj.currentIndex = obj.nullIndex = -1
-      obj.isNull = false
-      if obj.type is "relation"
-        obj[0] = prepare obj.getSubject()
-        obj[1] = prepare obj.getPredicate()
-        obj[2] = prepare obj.getObject()
-        obj[0].up = obj[1].up = obj[2].up = obj
-      obj
-
-    newAnswer = (qArr, spo)->
-      query:    qArr
-      type:     "answer"
-      relation: relation._id
-      answer:   spo._id
-
-    shiftNull = (r, answers)->
-      if r is false
-        ### meaning shiftNull was called on R.up (boundary condition) ###
-        l "done making answers"
-      else
-        r.currentIndex = 0
-        if r.nullIndex is -1
-          r.nullIndex = 0
-          r[0].isNull = true
-          answers = triggerAnswer answers
-          answers = more r, answers
-        else if r.nullIndex < 2
-          r[r.nullIndex].isNull = false
-          r.nullIndex += 1
-          r[r.nullIndex].isNull = true
-          answers = triggerAnswer answers
-          answers = more r, answers
-        else if r.nullIndex is 2
-          r[r.nullIndex].isNull = false
-          r.nullIndex = -1
-          answers = shiftNull r.up, answers
-      answers
-
-    triggerAnswer = (answers)->
-      qArr = ig.queryArr R
-      l "#{R[R.nullIndex]} answers #{JSON.stringify qArr}"
-      answers.push newAnswer qArr, R[R.nullIndex]
-      answers
-
-    more = (r, answers)->
-      if r.nullIndex is -1
-        answers = shiftNull r, answers
-      else if r.currentIndex is r.nullIndex
-        r.currentIndex += 1
-        answers = more r, answers
-      else if r.currentIndex is 3
-        answers = shiftNull r, answers
-      else if r[r.currentIndex].type is "item"
-        r.currentIndex += 1
-        answers = more r, answers
-      else if r[r.currentIndex].type is "relation"
-        answers = more r[r.currentIndex], answers
-      answers
-  
-    R = prepare relation
-    R.up = false
-    more R, []
-
-  ig.queryArr = (r)->
-    if r.isNull
-      null
-    else if r.type is "item"
-      r.toString()
-    else if r.type is "relation"
-      return  (ig.queryArr r[n] for n in [0,1,2])
 
   ig.setupLogin = (loginOptions, loggedIn, loggedOut)->
     throw "setupLogin needs login handler" unless loggedIn?

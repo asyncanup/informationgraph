@@ -6,9 +6,8 @@ function (newDoc, savedDoc, userCtx){
     if (!isTrue) throw({forbidden: message});
   }
 
-  function require(field, message){
-    message = message || newDoc.type + " must have a " + field;
-    var context = newDoc;
+  function require(field, context, message){
+    message = message || context.type + " missing a " + field;
     field.split(".").forEach(function(field){
       if (!context[field]) throw({forbidden: message});
       context = context[field];
@@ -20,27 +19,19 @@ function (newDoc, savedDoc, userCtx){
       throw ({ forbidden: "Field can't be changed: " + field });
   }
 
-  if (newDoc.type === "item"){
-    require("value");
+  function deepCheck(spo){
+    if (spo.type === "item"){
+      require("value", spo);
+    } else if (spo.type === "relation"){
+      require("subject", spo);
+      require("predicate", spo);
+      require("object", spo);
+      deepCheck(spo.subject);
+      deepCheck(spo.predicate);
+      deepCheck(spo.object);
+    }
   }
-
-  if (newDoc.type === "relation"){
-    //require("subject._id");
-    //require("subject.value");
-    //require("predicate._id");
-    //require("predicate.value");
-    //require("object._id");
-    //require("object.value");
-    require("subject");
-    require("predicate");
-    require("object");
-  }
-
-  if (newDoc.type === "answer"){
-    require("query");
-    require("answer");
-    require("relation");
-  }
-
+  
+  deepCheck(newDoc);
   // TODO: can't edit docs, they're immutable
 }

@@ -78,8 +78,8 @@ var __indexOf = Array.prototype.indexOf || function(item) {
     return d;
   };
   couchError = function(err) {
-    return function(response) {
-      return ig.notify("" + err + ": " + response.reason);
+    return function(response, id, reason) {
+      return ig.notify("" + err + ": " + reason);
     };
   };
   ig.debug = function(cmd) {
@@ -448,116 +448,6 @@ var __indexOf = Array.prototype.indexOf || function(item) {
       }
     });
     return ig;
-  };
-  ig.saveAnswers = function(relation, callback) {
-    var answers, next;
-    next = function(i) {
-      return db.saveDoc(answers[i], {
-        success: function(data) {
-          l("saved: " + (JSON.stringify(answers[i].query)));
-          if (i < answers.length - 1) {
-            return next(i + 1);
-          } else {
-            return callback();
-          }
-        },
-        error: couchError(JSON.stringify(answers[i].query))
-      });
-    };
-    answers = ig.makeAnswers(relation);
-    l("saving answers to db");
-    return next(0);
-  };
-  ig.makeAnswers = function(relation) {
-    var R, more, newAnswer, prepare, shiftNull, triggerAnswer;
-    prepare = function(spo) {
-      var obj;
-      obj = $.extend({}, spo);
-      obj.currentIndex = obj.nullIndex = -1;
-      obj.isNull = false;
-      if (obj.type === "relation") {
-        obj[0] = prepare(obj.getSubject());
-        obj[1] = prepare(obj.getPredicate());
-        obj[2] = prepare(obj.getObject());
-        obj[0].up = obj[1].up = obj[2].up = obj;
-      }
-      return obj;
-    };
-    newAnswer = function(qArr, spo) {
-      return {
-        query: qArr,
-        type: "answer",
-        relation: relation._id,
-        answer: spo._id
-      };
-    };
-    shiftNull = function(r, answers) {
-      if (r === false) {
-        /* meaning shiftNull was called on R.up (boundary condition) */
-        l("done making answers");
-      } else {
-        r.currentIndex = 0;
-        if (r.nullIndex === -1) {
-          r.nullIndex = 0;
-          r[0].isNull = true;
-          answers = triggerAnswer(answers);
-          answers = more(r, answers);
-        } else if (r.nullIndex < 2) {
-          r[r.nullIndex].isNull = false;
-          r.nullIndex += 1;
-          r[r.nullIndex].isNull = true;
-          answers = triggerAnswer(answers);
-          answers = more(r, answers);
-        } else if (r.nullIndex === 2) {
-          r[r.nullIndex].isNull = false;
-          r.nullIndex = -1;
-          answers = shiftNull(r.up, answers);
-        }
-      }
-      return answers;
-    };
-    triggerAnswer = function(answers) {
-      var qArr;
-      qArr = ig.queryArr(R);
-      l("" + R[R.nullIndex] + " answers " + (JSON.stringify(qArr)));
-      answers.push(newAnswer(qArr, R[R.nullIndex]));
-      return answers;
-    };
-    more = function(r, answers) {
-      if (r.nullIndex === -1) {
-        answers = shiftNull(r, answers);
-      } else if (r.currentIndex === r.nullIndex) {
-        r.currentIndex += 1;
-        answers = more(r, answers);
-      } else if (r.currentIndex === 3) {
-        answers = shiftNull(r, answers);
-      } else if (r[r.currentIndex].type === "item") {
-        r.currentIndex += 1;
-        answers = more(r, answers);
-      } else if (r[r.currentIndex].type === "relation") {
-        answers = more(r[r.currentIndex], answers);
-      }
-      return answers;
-    };
-    R = prepare(relation);
-    R.up = false;
-    return more(R, []);
-  };
-  ig.queryArr = function(r) {
-    var n, _i, _len, _ref, _results;
-    if (r.isNull) {
-      return null;
-    } else if (r.type === "item") {
-      return r.toString();
-    } else if (r.type === "relation") {
-      _ref = [0, 1, 2];
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        n = _ref[_i];
-        _results.push(ig.queryArr(r[n]));
-      }
-      return _results;
-    }
   };
   ig.setupLogin = function(loginOptions, loggedIn, loggedOut) {
     var login, loginElem, logout;
