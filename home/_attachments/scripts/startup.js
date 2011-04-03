@@ -10,10 +10,18 @@
   };
   ig = $.ig;
   render = function(doc, placeholder, template) {
+    var d;
     if (onPage(doc, placeholder)) {
       return ig.refresh(doc);
     } else {
-      return $(placeholder).append($(template).tmpl(doc));
+      d = $.extend({}, doc);
+      if (doc.type === "relation") {
+        d.subjectDoc = d.getSubject();
+        d.predicateDoc = d.getPredicate();
+        d.objectDoc = d.getObject();
+      }
+      cl("appending " + d);
+      return $(placeholder).append($(template).tmpl(d));
     }
   };
   docElem = function(elem) {

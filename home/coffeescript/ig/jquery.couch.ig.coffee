@@ -13,48 +13,41 @@ do (jQuery)->
 
   defaultCallback = (whatever)-> l "defaultCallback: #{whatever}"
   refreshDoc = (whatever)-> l "default refreshDoc: #{doc}"
+  selectionIndex = {}
   handleGuiSelection = (doc)->
     throw "handleGuiSelection needs doc" unless doc?
-    if doc.igSelectionIndex
-      guiDocSelect doc, doc.igSelectionIndex
+    if selectionIndex[doc._id]
+      guiDocSelect doc, selectionIndex[doc._id]
     else
       guiDocUnSelect doc
     if doc.type is "relation"
-      handleGuiSelection doc.subject
-      handleGuiSelection doc.predicate
-      handleGuiSelection doc.object
+      handleGuiSelection doc.getSubject()
+      handleGuiSelection doc.getPredicate()
+      handleGuiSelection doc.getObject()
   guiDocSelect = (doc)-> l "default guiDocSelect: #{doc}"
   guiDocUnSelect = (doc)-> l "default guiDocUnSelect: #{doc}"
   l = (str)-> window.console.log "ig: #{str}" if window.console and debugMode
   timestamp = -> (new Date()).getTime()
-  igDoc = (doc)->
+  prepare = (doc)->
     ### Makes a doc returned by db.openDoc apt for ig's consumption 
         (putting into cache, letting it be selected, etc)
     ###
-    d.igSelectionIndex = 0
-    setupRelation = (r)->
-      r.getSubject = -> docs[r.subject]
-      r.getPredicate = -> docs[r.predicate]
-      r.getObject = -> docs[r.object]
-      r.toString = -> "( #{r.getSubject()} - #{r.getPredicate()} - #{r.getObject()})"
-      r
-    switch doc.type
-      when "item"
-        d.toString = -> this.value
-      when "relation"
-        docs = this.docs
-        for d in docs
-          d = setupRelation d if d.type is "relation"
-        doc = setupRelation doc
+    selectionIndex[doc._id] = 0
+    setupSpo = (spo)->
+      switch spo.type
+        when "item"
+          spo.toString = -> this.value
+        when "relation"
+          spo.getSubject = -> doc.docs[this.subject]
+          spo.getPredicate = -> doc.docs[this.predicate]
+          spo.getObject = -> doc.docs[this.object]
+          spo.toString = ->
+            "( #{this.getSubject()} - #{this.getPredicate()} - #{this.getObject()} )"
+    setupSpo doc
+    if doc.type is "relation"
+      $.each doc.docs, (id,d)->
+        setupSpo d
     doc
-  couchDoc = (doc)->
-    ### Returns a representation that can be sent to db.saveDoc
-        No need to delete methods in doc because they don't 
-        get through JSON.stringify that db.saveDoc does
-    ###
-    d = $.extend {}, doc
-    delete d.igSelectionIndex
-    d
 
   couchError = (err)->
     (response, id, reason)-> ig.notify "#{err}: #{reason}"
@@ -104,8 +97,9 @@ do (jQuery)->
       db.openDoc id,
         success: (d)->
           if d.type in ["item", "relation"]
+            prepare d
             cache.remove d._id
-            cache.put d._id, igDoc d
+            cache.put d._id, d
             l "#{d.type} fetched: #{d}"
             callback d
         error: couchError "could not open document: #{id}"
@@ -172,7 +166,7 @@ do (jQuery)->
           l "refreshDoc: #{arg}"
           refreshDoc arg
           handleGuiSelection arg
-          ig.notify "#{arg} got deleted"
+          ig.notify "#{arg} got deleted" if arg._deleted
       else
         l "refresh: everything"
         refreshPlaceholder p for p of listeners
@@ -241,20 +235,18 @@ do (jQuery)->
             refreshDoc d
         -> removeNow id
 
-  ig.editItem = (id, newVal, whenEdited)->
+  ig.editItem = (id, newVal)->
     throw "editItem needs id" unless id?
     whenEdited ?= defaultCallback
     ig.doc id, (doc)->
-      d = couchDoc doc
+      d = $.extend {}, doc
       d.value = newVal
       d.updated = timestamp()
       l "saving item with new value '#{d.value}'"
       db.saveDoc d,
         success: (data)->
           l "saved edited document, notifying app"
-          ig.doc data.id, (item)->
-            ig.notify "Edited: #{item}"
-            whenEdited doc
+          ig.notify "Edited: #{doc}"
         error: couchError "Could not edit #{doc}"
 
   ig.selectDoc = (id)->
@@ -262,38 +254,42 @@ do (jQuery)->
 
       select = (doc)->
         selectedSpo.push doc
-        doc.igSelectionIndex = selectedSpo.length
+        selectionIndex[doc._id] = selectedSpo.length
         l "selected: #{doc}"
-        guiDocSelect doc, doc.igSelectionIndex
+        guiDocSelect doc, selectionIndex[doc._id]
         makeRelation() if selectedSpo.length is 3
 
       unselect = (doc)->
         selectedSpo.pop()
-        doc.igSelectionIndex = 0
+        selectionIndex[doc._id] = 0
         l "unselected: #{doc}"
         guiDocUnSelect doc
 
       makeRelation = ->
         l "subject, predicate and object selected, making relation"
+        spo = [s, p, o] = ($.extend {}, x for x in selectedSpo)
         relation =
           type: "relation"
-          subject: selectedSpo[0]._id
-          predicate: selectedSpo[1]._id
-          object: selectedSpo[2]._id
+          subject: s._id
+          predicate: p._id
+          object: o._id
           docs: {}
           created: timestamp()
-        # TODO: urgent
-        relation.docs = collectDocs selectedSpo
+        for x in spo
+          $.extend relation.docs, x.docs if x.type is "relation"
+          delete x.docs
+          relation.docs[x._id] = x
+        cl relation.docs
+        window.ss = selectedSpo
+        window.r = relation
         db.saveDoc relation,
           success: (data)->
             for spo in selectedSpo
-              spo.igSelectionIndex = 0
+              selectionIndex[spo._id] = 0
               guiDocUnSelect spo
             selectedSpo = []
             ig.doc data.id, (relation)->
               ig.notify "Created: #{relation}"
-              ig.saveAnswers relation, ->
-                l "done saving answers"
           error: couchError "Could not make relation"
 
       ig.doc id, (doc)->

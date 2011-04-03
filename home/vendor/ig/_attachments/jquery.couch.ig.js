@@ -5,7 +5,7 @@ var __indexOf = Array.prototype.indexOf || function(item) {
   return -1;
 };
 (function(jQuery) {
-  var $, cache, couchDoc, couchError, db, debugMode, defaultCallback, guiDocSelect, guiDocUnSelect, handleGuiSelection, hose, ig, igDoc, l, listeners, notifyUI, refreshDoc, selectedSpo, timestamp, _ref;
+  var $, cache, couchError, db, debugMode, defaultCallback, guiDocSelect, guiDocUnSelect, handleGuiSelection, hose, ig, l, listeners, notifyUI, prepare, refreshDoc, selectedSpo, selectionIndex, timestamp, _ref;
   $ = jQuery;
   ig = (_ref = $.ig) != null ? _ref : $.ig = {};
   db = null;
@@ -21,19 +21,20 @@ var __indexOf = Array.prototype.indexOf || function(item) {
   refreshDoc = function(whatever) {
     return l("default refreshDoc: " + doc);
   };
+  selectionIndex = {};
   handleGuiSelection = function(doc) {
     if (doc == null) {
       throw "handleGuiSelection needs doc";
     }
-    if (doc.igSelectionIndex) {
-      guiDocSelect(doc, doc.igSelectionIndex);
+    if (selectionIndex[doc._id]) {
+      guiDocSelect(doc, selectionIndex[doc._id]);
     } else {
       guiDocUnSelect(doc);
     }
     if (doc.type === "relation") {
-      handleGuiSelection(doc.subject);
-      handleGuiSelection(doc.predicate);
-      return handleGuiSelection(doc.object);
+      handleGuiSelection(doc.getSubject());
+      handleGuiSelection(doc.getPredicate());
+      return handleGuiSelection(doc.getObject());
     }
   };
   guiDocSelect = function(doc) {
@@ -50,52 +51,39 @@ var __indexOf = Array.prototype.indexOf || function(item) {
   timestamp = function() {
     return (new Date()).getTime();
   };
-  igDoc = function(doc) {
+  prepare = function(doc) {
     /* Makes a doc returned by db.openDoc apt for ig's consumption
         (putting into cache, letting it be selected, etc)
-    */    var d, docs, setupRelation, _i, _len;
-    d.igSelectionIndex = 0;
-    setupRelation = function(r) {
-      r.getSubject = function() {
-        return docs[r.subject];
-      };
-      r.getPredicate = function() {
-        return docs[r.predicate];
-      };
-      r.getObject = function() {
-        return docs[r.object];
-      };
-      r.toString = function() {
-        return "( " + (r.getSubject()) + " - " + (r.getPredicate()) + " - " + (r.getObject()) + ")";
-      };
-      return r;
+    */    var setupSpo;
+    selectionIndex[doc._id] = 0;
+    setupSpo = function(spo) {
+      switch (spo.type) {
+        case "item":
+          return spo.toString = function() {
+            return this.value;
+          };
+        case "relation":
+          spo.getSubject = function() {
+            return doc.docs[this.subject];
+          };
+          spo.getPredicate = function() {
+            return doc.docs[this.predicate];
+          };
+          spo.getObject = function() {
+            return doc.docs[this.object];
+          };
+          return spo.toString = function() {
+            return "( " + (this.getSubject()) + " - " + (this.getPredicate()) + " - " + (this.getObject()) + " )";
+          };
+      }
     };
-    switch (doc.type) {
-      case "item":
-        d.toString = function() {
-          return this.value;
-        };
-        break;
-      case "relation":
-        docs = this.docs;
-        for (_i = 0, _len = docs.length; _i < _len; _i++) {
-          d = docs[_i];
-          if (d.type === "relation") {
-            d = setupRelation(d);
-          }
-        }
-        doc = setupRelation(doc);
+    setupSpo(doc);
+    if (doc.type === "relation") {
+      $.each(doc.docs, function(id, d) {
+        return setupSpo(d);
+      });
     }
     return doc;
-  };
-  couchDoc = function(doc) {
-    /* Returns a representation that can be sent to db.saveDoc
-        No need to delete methods in doc because they don't
-        get through JSON.stringify that db.saveDoc does
-    */    var d;
-    d = $.extend({}, doc);
-    delete d.igSelectionIndex;
-    return d;
   };
   couchError = function(err) {
     return function(response, id, reason) {
@@ -164,8 +152,9 @@ var __indexOf = Array.prototype.indexOf || function(item) {
         success: function(d) {
           var _ref;
           if ((_ref = d.type) === "item" || _ref === "relation") {
+            prepare(d);
             cache.remove(d._id);
-            cache.put(d._id, igDoc(d));
+            cache.put(d._id, d);
             l("" + d.type + " fetched: " + d);
             return callback(d);
           }
@@ -271,7 +260,9 @@ var __indexOf = Array.prototype.indexOf || function(item) {
           l("refreshDoc: " + arg);
           refreshDoc(arg);
           handleGuiSelection(arg);
-          ig.notify("" + arg + " got deleted");
+          if (arg._deleted) {
+            ig.notify("" + arg + " got deleted");
+          }
         }
         break;
       default:
@@ -371,24 +362,21 @@ var __indexOf = Array.prototype.indexOf || function(item) {
       });
     }
   };
-  ig.editItem = function(id, newVal, whenEdited) {
+  ig.editItem = function(id, newVal) {
     if (id == null) {
       throw "editItem needs id";
     }
-    whenEdited != null ? whenEdited : whenEdited = defaultCallback;
+    typeof whenEdited != "undefined" && whenEdited !== null ? whenEdited : whenEdited = defaultCallback;
     return ig.doc(id, function(doc) {
       var d;
-      d = couchDoc(doc);
+      d = $.extend({}, doc);
       d.value = newVal;
       d.updated = timestamp();
       l("saving item with new value '" + d.value + "'");
       return db.saveDoc(d, {
         success: function(data) {
           l("saved edited document, notifying app");
-          return ig.doc(data.id, function(item) {
-            ig.notify("Edited: " + item);
-            return whenEdited(doc);
-          });
+          return ig.notify("Edited: " + doc);
         },
         error: couchError("Could not edit " + doc)
       });
@@ -401,45 +389,61 @@ var __indexOf = Array.prototype.indexOf || function(item) {
     }
     select = function(doc) {
       selectedSpo.push(doc);
-      doc.igSelectionIndex = selectedSpo.length;
+      selectionIndex[doc._id] = selectedSpo.length;
       l("selected: " + doc);
-      guiDocSelect(doc, doc.igSelectionIndex);
+      guiDocSelect(doc, selectionIndex[doc._id]);
       if (selectedSpo.length === 3) {
         return makeRelation();
       }
     };
     unselect = function(doc) {
       selectedSpo.pop();
-      doc.igSelectionIndex = 0;
+      selectionIndex[doc._id] = 0;
       l("unselected: " + doc);
       return guiDocUnSelect(doc);
     };
     makeRelation = function() {
-      var relation;
+      var o, p, relation, s, spo, x, _i, _len, _ref;
       l("subject, predicate and object selected, making relation");
+      spo = (_ref = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = selectedSpo.length; _i < _len; _i++) {
+          x = selectedSpo[_i];
+          _results.push($.extend({}, x));
+        }
+        return _results;
+      })(), s = _ref[0], p = _ref[1], o = _ref[2], _ref);
       relation = {
         type: "relation",
-        subject: selectedSpo[0]._id,
-        predicate: selectedSpo[1]._id,
-        object: selectedSpo[2]._id,
+        subject: s._id,
+        predicate: p._id,
+        object: o._id,
         docs: {},
         created: timestamp()
       };
-      relation.docs = collectDocs(selectedSpo);
+      for (_i = 0, _len = spo.length; _i < _len; _i++) {
+        x = spo[_i];
+        if (x.type === "relation") {
+          $.extend(relation.docs, x.docs);
+        }
+        delete x.docs;
+        relation.docs[x._id] = x;
+      }
+      cl(relation.docs);
+      window.ss = selectedSpo;
+      window.r = relation;
       return db.saveDoc(relation, {
         success: function(data) {
           var spo, _i, _len;
           for (_i = 0, _len = selectedSpo.length; _i < _len; _i++) {
             spo = selectedSpo[_i];
-            spo.igSelectionIndex = 0;
+            selectionIndex[spo._id] = 0;
             guiDocUnSelect(spo);
           }
           selectedSpo = [];
           return ig.doc(data.id, function(relation) {
-            ig.notify("Created: " + relation);
-            return ig.saveAnswers(relation, function() {
-              return l("done saving answers");
-            });
+            return ig.notify("Created: " + relation);
           });
         },
         error: couchError("Could not make relation")

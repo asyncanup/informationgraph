@@ -14,7 +14,14 @@ $(document).ready ->
     if onPage doc, placeholder
       ig.refresh doc
     else
-      $(placeholder).append $(template).tmpl(doc)
+      d = $.extend {}, doc
+      if doc.type is "relation"
+        #al d.getSubject().toString()
+        d.subjectDoc = d.getSubject()
+        d.predicateDoc = d.getPredicate()
+        d.objectDoc = d.getObject()
+      cl "appending #{d}"
+      $(placeholder).append $(template).tmpl(d)
 
   docElem = (elem)->
     $(elem).parents "[doc_id]:first"
@@ -133,7 +140,9 @@ $(document).ready ->
         startkey: [id]
         endkey:   [id, {}]
       beforeRender: -> $("#queryRelationList").empty()
-      render:       (doc)-> render doc, "#queryRelationList", "#relationTemplate"
+      render:       (doc)->
+        #al doc.getSubject().toString() if doc.type is "relation"
+        render doc, "#queryRelationList", "#relationTemplate"
     false
   # NOTE: Docs are considered immutable
   #co.delegate ".itemValue", dblclick, ->
