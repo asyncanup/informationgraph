@@ -27,23 +27,33 @@ do (jQuery)->
   guiDocUnSelect = (doc)-> l "default guiDocUnSelect: #{doc}"
   l = (str)-> window.console.log "ig: #{str}" if window.console and debugMode
   timestamp = -> (new Date()).getTime()
-  igDoc = (d)->
+  igDoc = (doc)->
+    ### Makes a doc returned by db.openDoc apt for ig's consumption 
+        (putting into cache, letting it be selected, etc)
+    ###
     d.igSelectionIndex = 0
-    switch d.type
+    setupRelation = (r)->
+      r.getSubject = -> docs[r.subject]
+      r.getPredicate = -> docs[r.predicate]
+      r.getObject = -> docs[r.object]
+      r.toString = -> "( #{r.getSubject()} - #{r.getPredicate()} - #{r.getObject()})"
+      r
+    switch doc.type
       when "item"
         d.toString = -> this.value
       when "relation"
-        d.toString = ->
-          "( #{igDoc d.subject} - #{igDoc d.predicate} - #{igDoc d.object} )"
-    d
+        docs = this.docs
+        for d in docs
+          d = setupRelation d if d.type is "relation"
+        doc = setupRelation doc
+    doc
   couchDoc = (doc)->
+    ### Returns a representation that can be sent to db.saveDoc
+        No need to delete methods in doc because they don't 
+        get through JSON.stringify that db.saveDoc does
+    ###
     d = $.extend {}, doc
-    delete d.toString
     delete d.igSelectionIndex
-    if d.type is "relation"
-      d.subject = couchDoc d.subject
-      d.predicate = couchDoc d.predicate
-      d.object = couchDoc d.object
     d
 
   couchError = (err)->
@@ -267,10 +277,13 @@ do (jQuery)->
         l "subject, predicate and object selected, making relation"
         relation =
           type: "relation"
-          subject: couchDoc selectedSpo[0]
-          predicate: couchDoc selectedSpo[1]
-          object: couchDoc selectedSpo[2]
+          subject: selectedSpo[0]._id
+          predicate: selectedSpo[1]._id
+          object: selectedSpo[2]._id
+          docs: {}
           created: timestamp()
+        # TODO: urgent
+        relation.docs = collectDocs selectedSpo
         db.saveDoc relation,
           success: (data)->
             for spo in selectedSpo

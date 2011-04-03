@@ -59,9 +59,9 @@
   <script id="relationTemplate" type="text/x-jquery-tmpl">
     <div doc_id="${_id}" class="relation">
       <table><tr>
-        <td class="subject">{{tmpl(subject) "#spoTemplate"}}</td>
-        <td class="predicate">{{tmpl(predicate) "#spoTemplate"}}</td>
-        <td class="object">{{tmpl(object) "#spoTemplate"}}</td>
+        <td class="subject">{{tmpl(getSubject()) "#spoTemplate"}}</td>
+        <td class="predicate">{{tmpl(getPredicate()) "#spoTemplate"}}</td>
+        <td class="object">{{tmpl(getObject()) "#spoTemplate"}}</td>
         <td class="relationSelect docSelect">
           <div class="relationSelectButton" title="Select relation">
             <span class="optionText">-</span>

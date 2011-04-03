@@ -50,31 +50,51 @@ var __indexOf = Array.prototype.indexOf || function(item) {
   timestamp = function() {
     return (new Date()).getTime();
   };
-  igDoc = function(d) {
+  igDoc = function(doc) {
+    /* Makes a doc returned by db.openDoc apt for ig's consumption
+        (putting into cache, letting it be selected, etc)
+    */    var d, docs, setupRelation, _i, _len;
     d.igSelectionIndex = 0;
-    switch (d.type) {
+    setupRelation = function(r) {
+      r.getSubject = function() {
+        return docs[r.subject];
+      };
+      r.getPredicate = function() {
+        return docs[r.predicate];
+      };
+      r.getObject = function() {
+        return docs[r.object];
+      };
+      r.toString = function() {
+        return "( " + (r.getSubject()) + " - " + (r.getPredicate()) + " - " + (r.getObject()) + ")";
+      };
+      return r;
+    };
+    switch (doc.type) {
       case "item":
         d.toString = function() {
           return this.value;
         };
         break;
       case "relation":
-        d.toString = function() {
-          return "( " + (igDoc(d.subject)) + " - " + (igDoc(d.predicate)) + " - " + (igDoc(d.object)) + " )";
-        };
+        docs = this.docs;
+        for (_i = 0, _len = docs.length; _i < _len; _i++) {
+          d = docs[_i];
+          if (d.type === "relation") {
+            d = setupRelation(d);
+          }
+        }
+        doc = setupRelation(doc);
     }
-    return d;
+    return doc;
   };
   couchDoc = function(doc) {
-    var d;
+    /* Returns a representation that can be sent to db.saveDoc
+        No need to delete methods in doc because they don't
+        get through JSON.stringify that db.saveDoc does
+    */    var d;
     d = $.extend({}, doc);
-    delete d.toString;
     delete d.igSelectionIndex;
-    if (d.type === "relation") {
-      d.subject = couchDoc(d.subject);
-      d.predicate = couchDoc(d.predicate);
-      d.object = couchDoc(d.object);
-    }
     return d;
   };
   couchError = function(err) {
@@ -399,11 +419,13 @@ var __indexOf = Array.prototype.indexOf || function(item) {
       l("subject, predicate and object selected, making relation");
       relation = {
         type: "relation",
-        subject: couchDoc(selectedSpo[0]),
-        predicate: couchDoc(selectedSpo[1]),
-        object: couchDoc(selectedSpo[2]),
+        subject: selectedSpo[0]._id,
+        predicate: selectedSpo[1]._id,
+        object: selectedSpo[2]._id,
+        docs: {},
         created: timestamp()
       };
+      relation.docs = collectDocs(selectedSpo);
       return db.saveDoc(relation, {
         success: function(data) {
           var spo, _i, _len;
