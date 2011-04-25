@@ -1,0 +1,8 @@
+*.swp
+*.swo
+*~
+tags
+logs
+pids
+.couchapprc
+.releases
