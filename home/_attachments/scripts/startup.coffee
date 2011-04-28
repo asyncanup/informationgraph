@@ -47,10 +47,10 @@ $(document).ready ->
       .text(text)
       .fadeIn("fast").delay(3000).fadeOut("slow")
 
-  ig.setupLogin
-    loginData:  getLoginData()
-    -> $("#loginButton").text("Logout")
-    -> $("#loginButton").text("Login")
+  #ig.setupLogin
+    #loginData:  getLoginData()
+    #-> $("#loginButton").text("Logout")
+    #-> $("#loginButton").text("Login")
 
   ig.refresh (doc)->
     ### this is the document refresh handler for the app ###
