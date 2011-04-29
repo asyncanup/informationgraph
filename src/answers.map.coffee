@@ -1,0 +1,1 @@
+../home/views/answers/map.coffee
