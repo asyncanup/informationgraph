@@ -6,3 +6,4 @@ logs
 pids
 .couchapprc
 .releases
+.loginData.js
