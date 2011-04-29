@@ -7,7 +7,11 @@ do (jQuery)->
   debugMode = on
   selectedSpo = []
   notifyUI = ->
-  cache = new LRUCache 100
+  cache =
+    find:   (id)-> this[id]?
+    get:    (id)-> this[id]
+    remove: (id)-> delete this[id]
+    put:    (id, doc)-> this[id] = doc
   hose = null
   listeners = {}
 
@@ -74,7 +78,7 @@ do (jQuery)->
             if d.deleted
               ### the deleted property is what couchdb 
                   sets in feed results. not mine ###
-              doc = cache.get(d.id)
+              doc = cache.get d.id
               l "#{doc} deleted"
               doc._deleted = true
               ig.refresh doc
