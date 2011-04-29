@@ -1,5 +1,5 @@
 do (jQuery)->
-  # TODO: haha
+  # TODO: hahas
   $ = jQuery
   ig = $.ig ?= {}
 
