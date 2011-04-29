@@ -1,10 +1,10 @@
 do (jQuery)->
-  # TODO: 
+  # TODO:
   $ = jQuery
   ig = $.ig ?= {}
 
   db = null
-  debugMode = on
+  debugMode = on 
   selectedSpo = []
   notifyUI = ->
   cache =
