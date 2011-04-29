@@ -1,72 +1,99 @@
-###
-   App using Information Graph js library
-###
+## IGapp - Couchapp based on Information Graph (IG)
+# 
+# Uses IG as a library and focuses only on providing a user interface to IG.
+# Assumes the presence of $.ig
+#
+# The UI is as follows:
+#
+# * A list of all _items_ is shown in the left sidebar
+#   - You can add new _item_ with the input box under it
+#   - Search for items with the input search box above it
+# * You can click on an item value to show in the main area all the _relations_ its a part of
+#   - Clicking on an item/relation (basically, spo) in the _relations_ table in main area searches for that spo instead and the main area then shows all the relations that that spo is part of
 
+# If jQuery says the dom is loaded
 $(document).ready ->
-  # TODO: 
 
+  # Alias `console.log` and `alert` for ease of use during development. 
+  # To be removed in production.
   window.cl = (str)-> console.log str
   window.al = (str)-> alert str
 
+  # Local variable _ig_ for easier reference
   ig = $.ig
   
+  # Helper function to handle all rendering of items/relations supposed to be on the page
   render = (doc, placeholder, template)->
+    # If the element to be rendered is already on the page
     if onPage doc, placeholder
+      # just refresh it right there, using `ig.refresh` (which has to be supplied to IG)
       ig.refresh doc
     else
+      # else make a new doc
       d = $.extend {}, doc
       if doc.type is "relation"
-        #al d.getSubject().toString()
         d.subjectDoc = d.getSubject()
         d.predicateDoc = d.getPredicate()
         d.objectDoc = d.getObject()
       cl "appending #{d}"
+      # and put it in the placeholder using the template specified
       $(placeholder).append $(template).tmpl(d)
 
+  # Returns the html element corresponding to an IG doc, given its child element
   docElem = (elem)->
     $(elem).parents "[doc_id]:first"
 
+  # Returns the html element corresponding to a doc, inside a given placeholder
   findOnPage = (doc, placeholder)->
     $ "[doc_id=#{doc._id}]", placeholder
 
+  # Whether a jQuery selector query result turned out to be empty
   exists = (elem)->
     $(elem).length isnt 0
 
+  # Whether a doc exists on the page, inside the given placeholder
   onPage = (doc, placeholder)->
     exists findOnPage doc, placeholder
 
+  # Given a jQuery element representing an IG doc, tells you its _type_
   elemType = (e)->
+    # out of `item`, `spo`, and `relation`
     for type in ["item", "spo", "relation"]
       return type if e.hasClass type
   
+  # Start IG's debug mode
   ig.debug "start"
+  # Set database
   ig.database "informationgraph"
 
+  # Handler passed to IG that is called every time the user is to be notified of something
   ig.notification (text)->
     $("#notification").stop(true, true)
       .text(text)
       .fadeIn("fast").delay(3000).fadeOut("slow")
 
-  #ig.setupLogin
-    #loginData:  getLoginData()
-    #-> $("#loginButton").text("Logout")
-    #-> $("#loginButton").text("Login")
-
+  # Sending a document refresh handler to IG, 
+  # to be called everytime a doc on the page is to be refreshed
   ig.refresh (doc)->
-    ### this is the document refresh handler for the app ###
+    # Find all the elements on the page showing off that doc
     elems = findOnPage doc
     if onPage doc
       if doc._deleted
+        # Remove the elements if the doc has been deleted (in couch)
         elems.remove()
       else
         elems.each (i, e)->
+          # otherwise replace the earlier copies with a new one
           e = $ e
           template = $ "##{elemType(e)}Template"
           e.after template.tmpl doc
           e.remove()
+          # setting the data field needed by the jQuery template plugin
           $.tmplItem(e).data = doc
     
+  # Handlers for _selecting_ or _unselecting_ a doc, so as to be included in a _relation_ being formed
   ig.docSelection(
+    # Selection handler needs the doc as well as its position in [subject, predicate, object]
     (doc, index)->
       selectText = ["-", "s", "p", "o"]
       elems = findOnPage doc
@@ -75,28 +102,33 @@ $(document).ready ->
         e.addClass "#{elemType(e)}Selected"
         e.find(".docSelect:last").find(".optionText")
           .text selectText[index]
+    # Unselect handler only needs the doc to be unselected
     (doc)->
       unSelectText = "-"
       elems = findOnPage doc
       elems.each (i, e)->
         e = $ e
         e.removeClass "#{elemType(e)}Selected"
-        ### 
-          .docSelect:last because otherwise a relation's 
-          subject's docSelect button might be chosen
-        ###
+        # `.docSelect:last` because otherwise an spo's `.docSelect` might be chosen
         e.find(".docSelect:last").find(".optionText")
           .text unSelectText
   )
 
+  # `linkPlaceholder` links a placeholder (just a container div) with a view query
   ig.linkPlaceholder "#itemList",
     view:         "home/allItems"
+    # `beforeRender` initialises a placeholder for incoming docs before `render` is called on them one by one
     beforeRender: -> $("#itemList").empty()
     render:       (doc)-> render doc, "#itemList", "#itemTemplate"
 
+  # `#itemFilter` is the search box on top of the left sidebar
   $("#itemFilter").change ->
+    # Instead of making an exact query for the entered value,
+    # the value is first _shortened_ so as to cater for slight misspellings or spacing problems
     val = shortenItem $(this).val()
+    # If there's something in the search box (after _shortening_)
     if val
+      # then `linkPlaceholder` `#itemList` with the view query for that search term
       ig.linkPlaceholder "#itemList",
         view:         "home/itemSuggestions"
         query:
@@ -105,6 +137,7 @@ $(document).ready ->
         beforeRender: -> $("#itemList").empty()
         render:       (doc)-> render doc, "#itemList", "#itemTemplate"
     else
+      # but if the search box has nothing, then just link `#itemList` with the `allItems` query again
       ig.linkPlaceholder "#itemList",
         view:         "home/allItems"
         query:
@@ -118,7 +151,7 @@ $(document).ready ->
     input = $ this.newItemValue
     ig.newItem input.val(), (doc)->
       $(input).val("")
-      ### this line is needed for _changes to affect this new doc ###
+      # this line is needed for _changes to affect this new doc
       render doc, "#itemList", "#itemTemplate"
     false
   co.delegate ".docSelect", "click", ->
@@ -141,23 +174,9 @@ $(document).ready ->
         endkey:   [id, {}]
       beforeRender: -> $("#queryRelationList").empty()
       render:       (doc)->
-        #al doc.getSubject().toString() if doc.type is "relation"
         render doc, "#queryRelationList", "#relationTemplate"
     false
-  # NOTE: Docs are considered immutable
-  #co.delegate ".itemValue", dblclick, ->
-    #e = docElem this
-    #id = e.attr "doc_id"
-    #ig.doc id, (doc)->
-      #p = e.parent()
-      #e.after $("itemEditTemplate").tmpl doc
-      #e.remove
-      #findOnPage(doc, p).find("input:first").focus()
-    #false
-  #co.delegate ".itemEditForm", "submit", ->
-    #e = docElem this
-    #id = e.attr "doc_id"
-    #input = $(this).find "input.itemInput"
-    #val = shortenItem input.val(), onlyTrim: true
-    #ig.editItem id, val
-  #false
+
+#### TODO list: 
+# 
+# * Complete this _docco_mentation
