@@ -1,0 +1,344 @@
+<!DOCTYPE html>  <html> <head>   <title>jquery.couch.ig.coffee</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="answers.map.html">                 answers.map.coffee               </a>                                           <a class="source" href="answers.reduce.html">                 answers.reduce.coffee               </a>                                           <a class="source" href="jquery.couch.ig.html">                 jquery.couch.ig.coffee               </a>                                           <a class="source" href="startup.html">                 startup.coffee               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               jquery.couch.ig.coffee             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="nx">do</span> <span class="nf">(jQuery)-&gt;</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>TODO:</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">$ = </span><span class="nx">jQuery</span>
+  <span class="nv">ig = </span><span class="nx">$</span><span class="p">.</span><span class="nx">ig</span> <span class="o">?=</span> <span class="p">{}</span>
+
+  <span class="nv">db = </span><span class="kc">null</span>
+  <span class="nv">debugMode = </span><span class="kc">on</span>
+  <span class="nv">selectedSpo = </span><span class="p">[]</span>
+  <span class="nv">notifyUI = </span><span class="o">-&gt;</span>
+  <span class="nv">cache =</span>
+    <span class="nv">find: </span>  <span class="nf">(id)-&gt;</span> <span class="k">this</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span><span class="o">?</span>
+    <span class="nv">get: </span>   <span class="nf">(id)-&gt;</span> <span class="k">this</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span>
+    <span class="nv">remove: </span><span class="nf">(id)-&gt;</span> <span class="k">delete</span> <span class="k">this</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span>
+    <span class="nv">put: </span>   <span class="nf">(id, doc)-&gt;</span> <span class="k">this</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span> <span class="o">=</span> <span class="nx">doc</span>
+  <span class="nv">hose = </span><span class="kc">null</span>
+  <span class="nv">listeners = </span><span class="p">{}</span>
+
+  <span class="nv">defaultCallback = </span><span class="nf">(whatever)-&gt;</span> <span class="nx">l</span> <span class="s2">&quot;defaultCallback: #{whatever}&quot;</span>
+  <span class="nv">refreshDoc = </span><span class="nf">(whatever)-&gt;</span> <span class="nx">l</span> <span class="s2">&quot;default refreshDoc: #{doc}&quot;</span>
+  <span class="nv">selectionIndex = </span><span class="p">{}</span>
+  <span class="nv">handleGuiSelection = </span><span class="nf">(doc)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;handleGuiSelection needs doc&quot;</span> <span class="nx">unless</span> <span class="nx">doc</span><span class="o">?</span>
+    <span class="k">if</span> <span class="nx">selectionIndex</span><span class="p">[</span><span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span>
+      <span class="nx">guiDocSelect</span> <span class="nx">doc</span><span class="p">,</span> <span class="nx">selectionIndex</span><span class="p">[</span><span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span>
+    <span class="k">else</span>
+      <span class="nx">guiDocUnSelect</span> <span class="nx">doc</span>
+    <span class="k">if</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">type</span> <span class="o">is</span> <span class="s2">&quot;relation&quot;</span>
+      <span class="nx">handleGuiSelection</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">getSubject</span><span class="p">()</span>
+      <span class="nx">handleGuiSelection</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">getPredicate</span><span class="p">()</span>
+      <span class="nx">handleGuiSelection</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">getObject</span><span class="p">()</span>
+  <span class="nv">guiDocSelect = </span><span class="nf">(doc)-&gt;</span> <span class="nx">l</span> <span class="s2">&quot;default guiDocSelect: #{doc}&quot;</span>
+  <span class="nv">guiDocUnSelect = </span><span class="nf">(doc)-&gt;</span> <span class="nx">l</span> <span class="s2">&quot;default guiDocUnSelect: #{doc}&quot;</span>
+  <span class="nv">l = </span><span class="nf">(str)-&gt;</span> <span class="nb">window</span><span class="p">.</span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span> <span class="s2">&quot;ig: #{str}&quot;</span> <span class="k">if</span> <span class="nb">window</span><span class="p">.</span><span class="nx">console</span> <span class="o">and</span> <span class="nx">debugMode</span>
+  <span class="nv">timestamp = </span><span class="o">-&gt;</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">getTime</span><span class="p">()</span>
+  <span class="nv">prepare = </span><span class="nf">(doc)-&gt;</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <h2>Makes a doc returned by db.openDoc apt for ig's consumption</h2>             </td>             <td class="code">               <div class="highlight"><pre>        <span class="p">(</span><span class="nx">putting</span> <span class="nx">into</span> <span class="nx">cache</span><span class="p">,</span> <span class="nx">letting</span> <span class="nx">it</span> <span class="nx">be</span> <span class="nx">selected</span><span class="p">,</span> <span class="nx">etc</span><span class="p">)</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <h1>#</h1>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nx">selectionIndex</span><span class="p">[</span><span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="nv">setupSpo = </span><span class="nf">(spo)-&gt;</span>
+      <span class="k">switch</span> <span class="nx">spo</span><span class="p">.</span><span class="nx">type</span>
+        <span class="k">when</span> <span class="s2">&quot;item&quot;</span>
+          <span class="nv">spo.toString = </span><span class="o">-&gt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">value</span>
+        <span class="k">when</span> <span class="s2">&quot;relation&quot;</span>
+          <span class="nv">spo.getSubject = </span><span class="o">-&gt;</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">docs</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">subject</span><span class="p">]</span>
+          <span class="nv">spo.getPredicate = </span><span class="o">-&gt;</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">docs</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">predicate</span><span class="p">]</span>
+          <span class="nv">spo.getObject = </span><span class="o">-&gt;</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">docs</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">object</span><span class="p">]</span>
+          <span class="nv">spo.toString = </span><span class="o">-&gt;</span>
+            <span class="s2">&quot;( #{this.getSubject()} - #{this.getPredicate()} - #{this.getObject()} )&quot;</span>
+    <span class="nx">setupSpo</span> <span class="nx">doc</span>
+    <span class="k">if</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">type</span> <span class="o">is</span> <span class="s2">&quot;relation&quot;</span>
+      <span class="nx">$</span><span class="p">.</span><span class="nx">each</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">docs</span><span class="p">,</span> <span class="nf">(id,d)-&gt;</span>
+        <span class="nx">setupSpo</span> <span class="nx">d</span>
+    <span class="nx">doc</span>
+
+  <span class="nv">couchError = </span><span class="nf">(err)-&gt;</span>
+    <span class="nf">(response, id, reason)-&gt;</span> <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;#{err}: #{reason}&quot;</span>
+
+  <span class="nv">ig.debug = </span><span class="nf">(cmd)-&gt;</span>
+    <span class="k">if</span> <span class="nx">cmd</span><span class="o">?</span>
+      <span class="nv">debugMode = </span><span class="k">if</span> <span class="nx">cmd</span> <span class="o">is</span> <span class="s2">&quot;stop&quot;</span> <span class="k">then</span> <span class="kc">off</span> <span class="k">else</span> <span class="kc">on</span>
+      <span class="nx">l</span> <span class="s2">&quot;debug mode on&quot;</span>
+      <span class="nx">ig</span>
+    <span class="k">else</span>
+      <span class="nx">debugMode</span>
+
+  <span class="nv">ig.database = </span><span class="nf">(dbname)-&gt;</span>
+    <span class="nx">unless</span> <span class="nx">dbname</span><span class="o">?</span>
+      <span class="nx">db</span>
+    <span class="k">else</span>
+      <span class="nv">db = </span><span class="nx">$</span><span class="p">.</span><span class="nx">couch</span><span class="p">.</span><span class="nx">db</span> <span class="nx">dbname</span>
+      <span class="nx">l</span> <span class="s2">&quot;db set to #{dbname}&quot;</span>
+      <span class="nv">hose = </span><span class="nx">db</span><span class="p">.</span><span class="nx">changes</span><span class="p">()</span>
+      <span class="nx">hose</span><span class="p">.</span><span class="nx">onChange</span> <span class="nf">(feed)-&gt;</span>
+        <span class="nx">l</span> <span class="s2">&quot;received changes&quot;</span>
+        <span class="k">for</span> <span class="nx">d</span> <span class="k">in</span> <span class="nx">feed</span><span class="p">.</span><span class="nx">results</span>
+          <span class="k">if</span> <span class="nx">cache</span><span class="p">.</span><span class="nx">find</span> <span class="nx">d</span><span class="p">.</span><span class="nx">id</span>
+            <span class="k">if</span> <span class="nx">d</span><span class="p">.</span><span class="nx">deleted</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <h2>the deleted property is what couchdb</h2>             </td>             <td class="code">               <div class="highlight"><pre>                  <span class="nx">sets</span> <span class="k">in</span> <span class="nx">feed</span> <span class="nx">results</span><span class="p">.</span> <span class="o">not</span> <span class="nx">mine</span> <span class="c1">###</span>
+              <span class="nv">doc = </span><span class="nx">cache</span><span class="p">.</span><span class="nx">get</span> <span class="nx">d</span><span class="p">.</span><span class="nx">id</span>
+              <span class="nx">l</span> <span class="s2">&quot;#{doc} deleted&quot;</span>
+              <span class="nv">doc._deleted = </span><span class="kc">true</span>
+              <span class="nx">ig</span><span class="p">.</span><span class="nx">refresh</span> <span class="nx">doc</span>
+              <span class="nx">cache</span><span class="p">.</span><span class="nx">remove</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">id</span>
+            <span class="k">else</span>
+              <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">d</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
+                <span class="nf">(doc)-&gt;</span>
+                  <span class="nx">l</span> <span class="s2">&quot;#{doc} updated&quot;</span>
+                  <span class="nx">ig</span><span class="p">.</span><span class="nx">refresh</span> <span class="nx">doc</span>
+                <span class="kc">true</span>
+      <span class="nx">l</span> <span class="s2">&quot;_changes feed set up&quot;</span>
+      <span class="nx">ig</span>
+
+  <span class="nv">ig.doc = </span><span class="nf">(id, callback, forceFetch)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;ig.doc needs id&quot;</span> <span class="nx">unless</span> <span class="nx">id</span><span class="o">?</span>
+    <span class="k">throw</span> <span class="s2">&quot;ig.doc needs a callback&quot;</span> <span class="nx">unless</span> <span class="nx">callback</span><span class="o">?</span>
+    <span class="k">if</span> <span class="o">not</span> <span class="nx">forceFetch</span> <span class="o">and</span> <span class="nx">cache</span><span class="p">.</span><span class="nx">find</span> <span class="nx">id</span>
+      <span class="nx">callback</span> <span class="nx">cache</span><span class="p">.</span><span class="nx">get</span> <span class="nx">id</span>
+    <span class="k">else</span>
+      <span class="nx">db</span><span class="p">.</span><span class="nx">openDoc</span> <span class="nx">id</span><span class="p">,</span>
+        <span class="nv">success: </span><span class="nf">(d)-&gt;</span>
+          <span class="k">if</span> <span class="nx">d</span><span class="p">.</span><span class="nx">type</span> <span class="k">in</span> <span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">,</span> <span class="s2">&quot;relation&quot;</span><span class="p">]</span>
+            <span class="nx">prepare</span> <span class="nx">d</span>
+            <span class="nx">cache</span><span class="p">.</span><span class="nx">remove</span> <span class="nx">d</span><span class="p">.</span><span class="nx">_id</span>
+            <span class="nx">cache</span><span class="p">.</span><span class="nx">put</span> <span class="nx">d</span><span class="p">.</span><span class="nx">_id</span><span class="p">,</span> <span class="nx">d</span>
+            <span class="nx">l</span> <span class="s2">&quot;#{d.type} fetched: #{d}&quot;</span>
+            <span class="nx">callback</span> <span class="nx">d</span>
+        <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;could not open document: #{id}&quot;</span>
+
+  <span class="nv">ig.search = </span><span class="nf">(view, query, resultDocCallback, noResultsCallback, dontNotify)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;search needs view&quot;</span> <span class="nx">unless</span> <span class="nx">view</span><span class="o">?</span>
+    <span class="k">throw</span> <span class="s2">&quot;search needs resultDocCallback&quot;</span> <span class="nx">unless</span> <span class="nx">noResultsCallback</span><span class="o">?</span>
+    <span class="nx">query</span> <span class="o">?=</span> <span class="p">{}</span>
+    <span class="nx">db</span><span class="p">.</span><span class="nx">view</span> <span class="nx">view</span><span class="p">,</span>
+      <span class="nx">$</span><span class="p">.</span><span class="nx">extend</span> <span class="nx">query</span><span class="p">,</span>
+        <span class="nv">success: </span><span class="nf">(data)-&gt;</span>
+          <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Search results: #{data.rows.length}&quot;</span> <span class="nx">unless</span> <span class="nx">dontNotify</span>
+          <span class="k">if</span> <span class="nx">data</span><span class="p">.</span><span class="nx">rows</span><span class="p">.</span><span class="nx">length</span> <span class="o">is</span> <span class="mi">0</span>
+            <span class="nx">noResultsCallback</span><span class="o">?</span><span class="p">()</span>
+          <span class="k">else</span>
+            <span class="k">for</span> <span class="nx">row</span> <span class="k">in</span> <span class="nx">data</span><span class="p">.</span><span class="nx">rows</span>
+              <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nf">(doc)-&gt;</span>
+                <span class="nx">resultDocCallback</span> <span class="nx">doc</span>
+        <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not run search query for #{view}&quot;</span>
+
+  <span class="nv">ig.notify = </span><span class="nf">(text)-&gt;</span> <span class="nx">l</span> <span class="nx">text</span>
+  <span class="nv">ig.notification = </span><span class="nf">(f)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;gui notification handler not specified&quot;</span> <span class="nx">unless</span> <span class="nx">f</span><span class="o">?</span>
+    <span class="nv">ig.notify = </span><span class="nf">(text)-&gt;</span>
+      <span class="nx">l</span> <span class="s2">&quot;notify: #{text}&quot;</span>
+      <span class="nx">f</span> <span class="nx">text</span>
+    <span class="nx">l</span> <span class="s2">&quot;gui notification handler set up&quot;</span>
+    <span class="nx">ig</span>
+
+  <span class="nv">ig.docSelection = </span><span class="nf">(select, unselect)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;docSelection needs gui selection handler&quot;</span> <span class="nx">unless</span> <span class="nx">select</span><span class="o">?</span>
+    <span class="k">throw</span> <span class="s2">&quot;docSelection needs gui unselection handler&quot;</span> <span class="nx">unless</span> <span class="nx">unselect</span><span class="o">?</span>
+    <span class="nv">guiDocSelect = </span><span class="nx">select</span>
+    <span class="nv">guiDocUnSelect = </span><span class="nx">unselect</span>
+    <span class="nx">ig</span>
+
+  <span class="nv">ig.refresh = </span><span class="nf">(arg)-&gt;</span>
+    <span class="nv">refreshPlaceholder = </span><span class="nf">(placeholder)-&gt;</span>
+      <span class="nx">unless</span> <span class="nx">listeners</span><span class="p">[</span><span class="nx">placeholder</span><span class="p">]</span><span class="o">?</span>
+        <span class="nx">l</span> <span class="s2">&quot;refresh: #{placeholder} is not registered&quot;</span>
+        <span class="kc">false</span>
+      <span class="k">else</span>
+        <span class="nv">options = </span><span class="nx">listeners</span><span class="p">[</span><span class="nx">placeholder</span><span class="p">]</span>
+        <span class="nx">l</span> <span class="s2">&quot;refresh: refreshing #{placeholder}&quot;</span>
+        <span class="nx">options</span><span class="p">.</span><span class="nx">beforeRender</span><span class="o">?</span><span class="p">()</span>
+        <span class="nx">ig</span><span class="p">.</span><span class="nx">search</span> <span class="nx">options</span><span class="p">.</span><span class="nx">view</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">query</span><span class="p">,</span>
+          <span class="nf">(doc)-&gt;</span>
+            <span class="nx">options</span><span class="p">.</span><span class="nx">render</span> <span class="nx">doc</span>
+            <span class="nx">handleGuiSelection</span> <span class="nx">doc</span>
+            <span class="nx">l</span> <span class="s2">&quot;refresh: rendered #{doc}&quot;</span>
+          <span class="o">-&gt;</span> <span class="nx">l</span> <span class="s2">&quot;refresh: no results for the #{options.view} query in #{placeholder}&quot;</span>
+
+    <span class="k">switch</span> <span class="k">typeof</span> <span class="nx">arg</span>
+      <span class="k">when</span> <span class="s2">&quot;function&quot;</span>
+        <span class="nv">refreshDoc = </span><span class="nx">arg</span>
+        <span class="nx">l</span> <span class="s2">&quot;refreshDoc set&quot;</span>
+      <span class="k">when</span> <span class="s2">&quot;string&quot;</span>
+        <span class="nx">l</span> <span class="s2">&quot;refresh: #{arg}&quot;</span>
+        <span class="nx">refreshPlaceholder</span> <span class="nx">arg</span>
+      <span class="k">when</span> <span class="s2">&quot;object&quot;</span>
+        <span class="k">if</span> <span class="nx">arg</span><span class="p">.</span><span class="nx">length</span><span class="o">?</span> <span class="o">and</span> <span class="nx">arg</span><span class="p">.</span><span class="nx">push</span><span class="o">?</span>
+          <span class="nx">refreshPlaceholder</span> <span class="nx">p</span> <span class="k">for</span> <span class="nx">p</span> <span class="k">in</span> <span class="nx">arg</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="nx">arg</span><span class="p">.</span><span class="nx">_deleted</span> <span class="o">or</span> <span class="nx">arg</span><span class="p">.</span><span class="nx">type</span><span class="o">?</span>
+          <span class="nx">l</span> <span class="s2">&quot;refreshDoc: #{arg}&quot;</span>
+          <span class="nx">refreshDoc</span> <span class="nx">arg</span>
+          <span class="nx">handleGuiSelection</span> <span class="nx">arg</span>
+          <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;#{arg} got deleted&quot;</span> <span class="k">if</span> <span class="nx">arg</span><span class="p">.</span><span class="nx">_deleted</span>
+      <span class="k">else</span>
+        <span class="nx">l</span> <span class="s2">&quot;refresh: everything&quot;</span>
+        <span class="nx">refreshPlaceholder</span> <span class="nx">p</span> <span class="k">for</span> <span class="nx">p</span> <span class="k">of</span> <span class="nx">listeners</span>
+    <span class="nx">ig</span>
+
+  <span class="nv">ig.linkPlaceholder = </span><span class="nf">(placeholder, options)-&gt;</span>
+      <span class="k">throw</span> <span class="s2">&quot;linkPlaceholder needs placeholder&quot;</span> <span class="nx">unless</span> <span class="nx">placeholder</span><span class="o">?</span>
+      <span class="k">throw</span> <span class="s2">&quot;linkPlaceholder needs options&quot;</span> <span class="nx">unless</span> <span class="nx">options</span><span class="o">?</span>
+      <span class="k">throw</span> <span class="s2">&quot;linkPlaceholder needs options.render&quot;</span> <span class="nx">unless</span> <span class="nx">options</span><span class="p">.</span><span class="nx">render</span><span class="o">?</span>
+      <span class="k">throw</span> <span class="s2">&quot;linkPlaceholder needs options.view&quot;</span> <span class="nx">unless</span> <span class="nx">options</span><span class="p">.</span><span class="nx">view</span><span class="o">?</span>
+      <span class="nx">listeners</span><span class="p">[</span><span class="nx">placeholder</span><span class="p">]</span> <span class="o">=</span> <span class="nx">options</span>
+      <span class="nx">l</span> <span class="s2">&quot;linked #{placeholder} to #{options.view}&quot;</span>
+      <span class="nx">ig</span><span class="p">.</span><span class="nx">refresh</span> <span class="nx">placeholder</span>
+      <span class="nx">ig</span>
+
+  <span class="nv">ig.unlinkPlaceholder = </span><span class="nf">(placeholder)-&gt;</span>
+    <span class="k">delete</span> <span class="nx">listeners</span><span class="p">[</span><span class="nx">placeholder</span><span class="p">]</span>
+    <span class="nx">ig</span><span class="p">.</span><span class="nx">refresh</span><span class="p">()</span>
+    <span class="nx">ig</span>
+  <span class="nv">ig.unlinkAll = </span><span class="o">-&gt;</span>
+    <span class="nv">listeners = </span><span class="p">{}</span>
+    <span class="nx">l</span> <span class="s2">&quot;cleared all placeholder listeners&quot;</span>
+    <span class="nx">ig</span>
+
+  <span class="nv">ig.newItem = </span><span class="nf">(val, whenSaved)-&gt;</span>
+    <span class="nx">whenSaved</span> <span class="o">?=</span> <span class="nx">defaultCallback</span>
+    <span class="nv">val = </span><span class="nx">shortenItem</span> <span class="nx">val</span><span class="p">,</span>
+      <span class="nv">onlyTrim: </span><span class="kc">true</span>
+    <span class="nx">unless</span> <span class="nx">val</span>
+      <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Please enter a value&quot;</span>
+      <span class="kc">false</span>
+    <span class="k">else</span>
+      <span class="nv">item =</span>
+        <span class="nv">type: </span><span class="s2">&quot;item&quot;</span>
+        <span class="nv">value: </span><span class="nx">val</span>
+        <span class="nv">created: </span><span class="nx">timestamp</span><span class="p">()</span>
+      <span class="nx">db</span><span class="p">.</span><span class="nx">saveDoc</span> <span class="nx">item</span><span class="p">,</span>
+        <span class="nv">success: </span><span class="nf">(data)-&gt;</span>
+          <span class="nx">l</span> <span class="s2">&quot;saved new item&quot;</span>
+          <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nf">(doc)-&gt;</span>
+            <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Created: #{doc}&quot;</span>
+            <span class="nx">whenSaved</span> <span class="nx">doc</span>
+        <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not create item &#39;#{val}&#39;&quot;</span>
+
+  <span class="nv">ig.deleteDoc = </span><span class="nf">(id, whenDeleted, forcingIt)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;deleteDoc needs id&quot;</span> <span class="nx">unless</span> <span class="nx">id</span><span class="o">?</span>
+    <span class="nx">whenDeleted</span> <span class="o">?=</span> <span class="nx">defaultCallback</span>
+    <span class="nv">removeNow = </span><span class="nf">(id)-&gt;</span>
+      <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">id</span><span class="p">,</span> <span class="nf">(doc)-&gt;</span>
+        <span class="nx">db</span><span class="p">.</span><span class="nx">removeDoc</span> <span class="nx">doc</span><span class="p">,</span>
+          <span class="nv">success: </span><span class="nf">(data)-&gt;</span>
+            <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Deleted: #{doc}&quot;</span>
+            <span class="nx">whenDeleted</span> <span class="nx">doc</span>
+          <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not delete #{doc}&quot;</span>
+
+    <span class="k">if</span> <span class="nx">forcingIt</span>
+      <span class="nx">removeNow</span> <span class="nx">id</span>
+    <span class="k">else</span>
+      <span class="nx">ig</span><span class="p">.</span><span class="nx">search</span> <span class="s2">&quot;home/relations&quot;</span><span class="p">,</span>
+        <span class="nv">startkey: </span><span class="p">[</span><span class="nx">id</span><span class="p">]</span>
+        <span class="nv">endkey: </span>  <span class="p">[</span><span class="nx">id</span><span class="p">,</span> <span class="p">{}]</span>
+        <span class="nv">limit: </span>   <span class="mi">1</span>
+        <span class="nf">(doc)-&gt;</span>
+          <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Delete dependent relations first: #{doc}&quot;</span>
+          <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">id</span><span class="p">,</span> <span class="nf">(d)-&gt;</span>
+            <span class="nx">refreshDoc</span> <span class="nx">d</span>
+        <span class="o">-&gt;</span> <span class="nx">removeNow</span> <span class="nx">id</span>
+
+  <span class="nv">ig.editItem = </span><span class="nf">(id, newVal)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;editItem needs id&quot;</span> <span class="nx">unless</span> <span class="nx">id</span><span class="o">?</span>
+    <span class="nx">whenEdited</span> <span class="o">?=</span> <span class="nx">defaultCallback</span>
+    <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">id</span><span class="p">,</span> <span class="nf">(doc)-&gt;</span>
+      <span class="nv">d = </span><span class="nx">$</span><span class="p">.</span><span class="nx">extend</span> <span class="p">{},</span> <span class="nx">doc</span>
+      <span class="nv">d.value = </span><span class="nx">newVal</span>
+      <span class="nv">d.updated = </span><span class="nx">timestamp</span><span class="p">()</span>
+      <span class="nx">l</span> <span class="s2">&quot;saving item with new value &#39;#{d.value}&#39;&quot;</span>
+      <span class="nx">db</span><span class="p">.</span><span class="nx">saveDoc</span> <span class="nx">d</span><span class="p">,</span>
+        <span class="nv">success: </span><span class="nf">(data)-&gt;</span>
+          <span class="nx">l</span> <span class="s2">&quot;saved edited document, notifying app&quot;</span>
+          <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Edited: #{doc}&quot;</span>
+        <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not edit #{doc}&quot;</span>
+
+  <span class="nv">ig.selectDoc = </span><span class="nf">(id)-&gt;</span>
+      <span class="k">throw</span> <span class="s2">&quot;selectDoc needs id&quot;</span> <span class="nx">unless</span> <span class="nx">id</span><span class="o">?</span>
+
+      <span class="nv">select = </span><span class="nf">(doc)-&gt;</span>
+        <span class="nx">selectedSpo</span><span class="p">.</span><span class="nx">push</span> <span class="nx">doc</span>
+        <span class="nx">selectionIndex</span><span class="p">[</span><span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span> <span class="o">=</span> <span class="nx">selectedSpo</span><span class="p">.</span><span class="nx">length</span>
+        <span class="nx">l</span> <span class="s2">&quot;selected: #{doc}&quot;</span>
+        <span class="nx">guiDocSelect</span> <span class="nx">doc</span><span class="p">,</span> <span class="nx">selectionIndex</span><span class="p">[</span><span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span>
+        <span class="nx">makeRelation</span><span class="p">()</span> <span class="k">if</span> <span class="nx">selectedSpo</span><span class="p">.</span><span class="nx">length</span> <span class="o">is</span> <span class="mi">3</span>
+
+      <span class="nv">unselect = </span><span class="nf">(doc)-&gt;</span>
+        <span class="nx">selectedSpo</span><span class="p">.</span><span class="nx">pop</span><span class="p">()</span>
+        <span class="nx">selectionIndex</span><span class="p">[</span><span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="nx">l</span> <span class="s2">&quot;unselected: #{doc}&quot;</span>
+        <span class="nx">guiDocUnSelect</span> <span class="nx">doc</span>
+
+      <span class="nv">makeRelation = </span><span class="o">-&gt;</span>
+        <span class="nx">l</span> <span class="s2">&quot;subject, predicate and object selected, making relation&quot;</span>
+        <span class="nv">spo = </span><span class="p">[</span><span class="nx">s</span><span class="p">,</span> <span class="nx">p</span><span class="p">,</span> <span class="nx">o</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">extend</span> <span class="p">{},</span> <span class="nx">x</span> <span class="k">for</span> <span class="nx">x</span> <span class="k">in</span> <span class="nx">selectedSpo</span><span class="p">)</span>
+        <span class="nv">relation =</span>
+          <span class="nv">type: </span><span class="s2">&quot;relation&quot;</span>
+          <span class="nv">subject: </span><span class="nx">s</span><span class="p">.</span><span class="nx">_id</span>
+          <span class="nv">predicate: </span><span class="nx">p</span><span class="p">.</span><span class="nx">_id</span>
+          <span class="nv">object: </span><span class="nx">o</span><span class="p">.</span><span class="nx">_id</span>
+          <span class="nv">docs: </span><span class="p">{}</span>
+          <span class="nv">created: </span><span class="nx">timestamp</span><span class="p">()</span>
+        <span class="k">for</span> <span class="nx">x</span> <span class="k">in</span> <span class="nx">spo</span>
+          <span class="nx">$</span><span class="p">.</span><span class="nx">extend</span> <span class="nx">relation</span><span class="p">.</span><span class="nx">docs</span><span class="p">,</span> <span class="nx">x</span><span class="p">.</span><span class="nx">docs</span> <span class="k">if</span> <span class="nx">x</span><span class="p">.</span><span class="nx">type</span> <span class="o">is</span> <span class="s2">&quot;relation&quot;</span>
+          <span class="k">delete</span> <span class="nx">x</span><span class="p">.</span><span class="nx">docs</span>
+          <span class="nx">relation</span><span class="p">.</span><span class="nx">docs</span><span class="p">[</span><span class="nx">x</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span> <span class="o">=</span> <span class="nx">x</span>
+        <span class="nx">cl</span> <span class="nx">relation</span><span class="p">.</span><span class="nx">docs</span>
+        <span class="nb">window</span><span class="p">.</span><span class="nv">ss = </span><span class="nx">selectedSpo</span>
+        <span class="nb">window</span><span class="p">.</span><span class="nv">r = </span><span class="nx">relation</span>
+        <span class="nx">db</span><span class="p">.</span><span class="nx">saveDoc</span> <span class="nx">relation</span><span class="p">,</span>
+          <span class="nv">success: </span><span class="nf">(data)-&gt;</span>
+            <span class="k">for</span> <span class="nx">spo</span> <span class="k">in</span> <span class="nx">selectedSpo</span>
+              <span class="nx">selectionIndex</span><span class="p">[</span><span class="nx">spo</span><span class="p">.</span><span class="nx">_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+              <span class="nx">guiDocUnSelect</span> <span class="nx">spo</span>
+            <span class="nv">selectedSpo = </span><span class="p">[]</span>
+            <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nf">(relation)-&gt;</span>
+              <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Created: #{relation}&quot;</span>
+          <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not make relation&quot;</span>
+
+      <span class="nx">ig</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">id</span><span class="p">,</span> <span class="nf">(doc)-&gt;</span>
+        <span class="k">if</span> <span class="nx">selectedSpo</span><span class="p">.</span><span class="nx">length</span> <span class="o">isnt</span> <span class="mi">0</span>
+          <span class="k">if</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span> <span class="o">is</span> <span class="nx">selectedSpo</span><span class="p">[</span><span class="nx">selectedSpo</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nx">_id</span>
+            <span class="nx">unselect</span> <span class="nx">doc</span>
+          <span class="k">else</span> <span class="k">if</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">_id</span> <span class="k">in</span> <span class="p">(</span><span class="nx">spo</span><span class="p">.</span><span class="nx">_id</span> <span class="k">for</span> <span class="nx">spo</span> <span class="k">in</span> <span class="nx">selectedSpo</span><span class="p">)</span>
+            <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Sorry, already selected that one&quot;</span>
+          <span class="k">else</span> <span class="k">if</span> <span class="nx">selectedSpo</span><span class="p">.</span><span class="nx">length</span> <span class="o">is</span> <span class="mi">3</span>
+            <span class="nx">ig</span><span class="p">.</span><span class="nx">notify</span> <span class="s2">&quot;Can&#39;t select more than 3&quot;</span>
+          <span class="k">else</span>
+            <span class="nx">select</span> <span class="nx">doc</span>
+        <span class="k">else</span>
+          <span class="nx">select</span> <span class="nx">doc</span>
+      <span class="nx">ig</span>
+
+  <span class="nv">ig.setupLogin = </span><span class="nf">(loginOptions, loggedIn, loggedOut)-&gt;</span>
+    <span class="k">throw</span> <span class="s2">&quot;setupLogin needs login handler&quot;</span> <span class="nx">unless</span> <span class="nx">loggedIn</span><span class="o">?</span>
+    <span class="k">throw</span> <span class="s2">&quot;setupLogin needs logout handler&quot;</span> <span class="nx">unless</span> <span class="nx">loggedOut</span><span class="o">?</span>
+    <span class="nx">loginOptions</span> <span class="o">?=</span> <span class="p">{}</span>
+    <span class="nx">loginData</span> <span class="o">?=</span>
+      <span class="nv">name: </span><span class="s2">&quot;_&quot;</span>
+      <span class="nv">password: </span><span class="s2">&quot;_&quot;</span>
+    <span class="nv">login = </span><span class="o">-&gt;</span>
+      <span class="nx">l</span> <span class="s2">&quot;Logging in&quot;</span>
+      <span class="nx">$</span><span class="p">.</span><span class="nx">couch</span><span class="p">.</span><span class="nx">login</span> <span class="nx">$</span><span class="p">.</span><span class="nx">extend</span> <span class="nx">loginData</span><span class="p">,</span>
+        <span class="nv">success: </span><span class="nx">loggedIn</span>
+        <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not login&quot;</span>
+    <span class="nv">logout = </span><span class="o">-&gt;</span>
+      <span class="nx">l</span> <span class="s2">&quot;Logging out&quot;</span>
+      <span class="nx">$</span><span class="p">.</span><span class="nx">couch</span><span class="p">.</span><span class="nx">logout</span>
+        <span class="nv">success: </span><span class="nx">loggedOut</span>
+        <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not logout&quot;</span>
+
+    <span class="nv">loginElem = </span><span class="kc">null</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <p>ISSUE: not ok with handling a dom element here</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nx">$</span><span class="p">.</span><span class="nx">couch</span><span class="p">.</span><span class="nx">session</span>
+      <span class="nv">success: </span><span class="nf">(response)-&gt;</span>
+        <span class="k">if</span> <span class="nx">response</span><span class="p">.</span><span class="nx">userCtx</span><span class="p">.</span><span class="nx">roles</span><span class="p">.</span><span class="nx">length</span> <span class="o">is</span> <span class="mi">0</span>
+          <span class="nx">l</span> <span class="s2">&quot;useCtx.roles is empty&quot;</span>
+          <span class="nv">loginElem = </span><span class="nx">loggedOut</span><span class="p">()</span>
+          <span class="nx">loginElem</span><span class="p">.</span><span class="nx">toggle</span> <span class="nx">login</span><span class="p">,</span> <span class="nx">logout</span>
+        <span class="k">else</span>
+            <span class="nx">l</span> <span class="s2">&quot;userCtx.roles is non-empty&quot;</span>
+            <span class="nv">loginElem = </span><span class="nx">loggedIn</span><span class="p">()</span>
+            <span class="nx">loginElem</span><span class="p">.</span><span class="nx">toggle</span> <span class="nx">logout</span><span class="p">,</span> <span class="nx">login</span>
+      <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not connect to database&quot;</span>
+    <span class="nx">ig</span>
+
+  <span class="nv">ig.emptyDb = </span><span class="o">-&gt;</span>
+    <span class="nx">db</span><span class="p">.</span><span class="nx">allDocs</span>
+      <span class="nv">include_docs: </span><span class="kc">true</span>
+      <span class="nv">success: </span><span class="nf">(data)-&gt;</span>
+        <span class="k">for</span> <span class="nx">row</span> <span class="k">in</span> <span class="nx">data</span><span class="p">.</span><span class="nx">rows</span>
+          <span class="nx">db</span><span class="p">.</span><span class="nx">removeDoc</span> <span class="nx">row</span><span class="p">.</span><span class="nx">doc</span> <span class="nx">unless</span> <span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span> <span class="o">is</span> <span class="s2">&quot;_design/&quot;</span>
+      <span class="nv">error: </span><span class="nx">couchError</span> <span class="s2">&quot;Could not empty the database&quot;</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

@@ -8,7 +8,7 @@
   #   Every element in this array has the liberty to be present in 
   #   the query or not. Lets call this array `idlist`
   # * There will be (2^n - 1) query possibilities to be satisfied by
-  #   `idlist` where n is the `idlist.length`
+  #   `idlist` where `n` is `idlist.length`
 
   docs = doc.docs
   
@@ -31,7 +31,7 @@
     # If so, we can build `idlist`
     idlist = traverse doc, []
     n = idlist.length
-    # and for all numbers from 1 to 2^n - 1
+    # And for all numbers from 1 to 2^n - 1
     for i in [1...Math.pow(2,n)]
       # we get their binary representation (padded to length n)
       str = i.toString(2)
