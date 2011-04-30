@@ -287,8 +287,6 @@ do (jQuery)->
           $.extend relation.docs, x.docs if x.type is "relation"
           delete x.docs
           relation.docs[x._id] = x
-        window.ss = selectedSpo
-        window.r = relation
         db.saveDoc relation,
           success: (data)->
             for spo in selectedSpo
