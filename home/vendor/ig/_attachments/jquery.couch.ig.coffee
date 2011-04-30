@@ -1,5 +1,9 @@
-do (jQuery)->
   # TODO:
+  #
+  # * Add a `two_way`: `true`/`false` attribute to relations
+  # * Possibly emit `answers` queries as complex keys, so that when no results 
+  #   are found for a query, it can be generalised and run again.
+do (jQuery)->
   $ = jQuery
   ig = $.ig ?= {}
 
