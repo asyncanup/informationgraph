@@ -2,61 +2,79 @@
   #`// !code _attachments/scripts/hashUp.js
   #`
 
-  # Plan of Action:
-  #
-  # * Traverse the doc and get an array of its referenced docs' ids.
-  #   Every element in this array has the liberty to be present in 
-  #   the query or not. Lets call this array `idlist`
-  # * There will be (2^n - 1) query possibilities to be satisfied by
-  #   `idlist` where `n` is `idlist.length`
-
-  docs = doc.docs
-  
-  # `traverse` goes through a doc and returns the mentioned array
-  traverse = (doc, arr)->
+  # Traverse the doc and transform its structure into an array form
+  # Every element in this array represents a doc and has the liberty 
+  # to be present in the query or not. Lets call this array `doclist`
+  traverse = (doc, doclist, pos, alldocs)->
     if doc.type is "relation"
-      arr.push docs[doc.subject]._id
-      arr.push docs[doc.predicate]._id
-      arr.push docs[doc.object]._id
-      # The order of the docids is determined by breadth-first traversal
-      # of the doc (subject, then predicate, then object, then subject docs, etc)
-      traverse docs[doc.object],
-        traverse docs[doc.predicate],
-          traverse docs[doc.subject], arr
-    else
-      arr
+      for spo in ["subject", "predicate", "object"]
+        id = doc[spo]
+        doclist.push
+          id: id
+          pos: pos + spo[0]
+        doclist = traverse alldocs[id], doclist, pos + spo[0], alldocs
+    doclist
 
-  # The doc supplied to the view needs to be a relation
   if doc.type is "relation"
-    # If so, we can build `idlist`
-    idlist = traverse doc, []
-    n = idlist.length
+    doclist = traverse doc, [], "", doc.docs
+
+    recurse = (query, answer, doclist, k)->
+      if k is doclist.length
+        emit query, answer
+      else
+        thisdoc = doclist[k]
+        if thisdoc.type is "item"
+          query.push null
+          answer.push thisdoc
+          recurse(query, answer, idlist, k+1)
+
+
     # And for all numbers from 1 to 2^n - 1
-    for i in [1...Math.pow(2,n)]
+    #for num in [1...Math.pow(2,n)]
       # we get their binary representation (padded to length n)
-      str = i.toString(2)
-      str = (new Array(n+1-str.length)).join("0") + str
+      #str = num.toString(2)
+      #str = (new Array(n+1-str.length)).join("0") + str
 
       # Now this binary representation `str` is basically the code about
       # what spos we should make `null` in each of these 2^n-1 queries
 
-      # Initialise query array
-      query = []
-      # Initialise answer array
-      answer = []
+      # Initialise `query`
+      #query = []
+      # Initialise `answer`
+      #answer = []
 
-      # We will now fill these two arrays with appropriate docids. Note that 
-      # the length of `query` and `answer` won't be `n` for every `str`
-      # because if a subject somewhere is rendered `null` by `str`,
-      # then its own doc tree (if it was a relation itself) has to vanish 
-      # from `query` and the subject doc itself, then, will be part of `answer`
-      for c, index in str
-        if c is "0"
-          # Lets take `0` to be the code for `null` in query,
-          # and hence, we put a docid in `answer` at the appropriate place
-          answer[index] = idlist[index]
-        else
-          # And for `1` in the binary representation we put a docid in `query`
-          query[index] = idlist[index]
+      #setarr = (str[i...i+3] for i in [0...str.length/3])
+      #for set, setindex in setarr
+        #unless set is "000" or
+          #(set[0] is "0" and docs setarr[setindex+1] isnt "000") or
+          #set is "101"
+            #true
+          #for c, spoindex in set
+            #index = 3*setindex + spoindex
+            #if c is "1"
+              #query[index] = idlist[index]
+            #else
+              #answer[index] = idlist[index]
+
+
+      # We will now fill these two with appropriate docids.
+      # `current` is the current relation of the doc that `c` will decide the fate of
+      #current = query
+      #for c, index in str
+        #unless c[index...index+3] is "000"
+          #true
+        #if c is "0"
+          # Taking `0` to be the code for `null` in query
+          #current.push null
+        #else
+          #current.push idlist[index]
+        # `pos` is the position of `current` in `query`, the position being filled
+        # (subject, predicate, object corresponding to 0, 1, 2 respectively)
+        #pos = index%3
+        #if current.length is 3
+          #[s, p, o] = current
+          #unless s is null and p is null and o is null
+           #if docs[idlist[index]]
+
 
   # TODO: Incomplete
