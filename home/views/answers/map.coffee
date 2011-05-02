@@ -15,18 +15,28 @@
         doclist = traverse alldocs[id], doclist, pos + spo[0], alldocs
     doclist
 
-  if doc.type is "relation"
-    doclist = traverse doc, [], "", doc.docs
+  recurse = (query, answer, doclist, k, alldocs)->
+    if k is doclist.length
+      emit query, answer
+    else
+      thisdoc = alldocs[doclist[k].id]
+      if thisdoc.type is "item"
+        # 0
+        recurse query.concat(null), answer.concat(thisdoc), doclist, k+1, alldocs
+        # 1
+        recurse query.concat(thisdoc), answer.concat(null), doclist, k+1, alldocs
+      else if thisdoc.type is "relation"
+        # 1
+        recurse query.concat(thisdoc), answer.concat(null), doclist, k+1, alldocs
+        # 0
+        n = k+1
+        n += 1 while doclist[n].pos.length isnt doclist[k].pos.length
+        recurse query.concat(null), answer.concat(thisdoc), doclist, n, alldocs
 
-    recurse = (query, answer, doclist, k)->
-      if k is doclist.length
-        emit query, answer
-      else
-        thisdoc = doclist[k]
-        if thisdoc.type is "item"
-          query.push null
-          answer.push thisdoc
-          recurse(query, answer, idlist, k+1)
+  if doc.type is "relation"
+
+    doclist = traverse doc, [], "", doc.docs
+    recurse [], [], doclist, 0, doc.docs
 
 
     # And for all numbers from 1 to 2^n - 1
