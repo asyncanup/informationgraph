@@ -1,27 +1,5 @@
 (doc)->
 
-  # Browser testing stuff. TODO: To be removed
-  al = -> true
-  #cl = console.log
-  #emit = (q, a)->
-    #cl "query:"; cl q
-    #cl "answer: "; cl a
-    #cl "--------"
-
-  say = (arg)-> true
-    #if arg?
-      #if arg.push?
-        #return (say d for d in arg)
-      #else if arg.slice?
-        #return arg
-      #else
-        #if arg.value
-          #return arg.value
-        #else
-         #return "R"
-    #else
-      #return null
-
   ## Helper Functions
   # 
   # Returns the id of a doc, `null` otherwise.
@@ -69,15 +47,13 @@
   # Example format array: ["s", "p", "o", "os", "op", "oo"] for the relation
   # ( ram - said - ( hanuman - love - icecream ) )
   untraverse = (doclist, format)->
-    al "doclist: #{say doclist}"
     # If we're `untraverse`ing a simple subject, predicate, object triplet
     # where all three are items
     if doclist.length is 3 and (f.slice(-1) for f in format).join("") is "spo"
       [slevel, plevel, olevel] = (f.length for f in format)
       if slevel is plevel is olevel
         # then just check for the integrity of the received format and
-        al "returning small: #{say doclist}"
-        # return the string representations of the subject, predicate and object
+        # return the ids of its subject, predicate and object respectively
         return (idof d for d in doclist)
       else
         # make some noise if data integrity failed
@@ -91,9 +67,7 @@
       # figure out their boundaries in `doclist`
       from ?= start
       to = from + 1
-      al "from: #{from}"
       to += 1 while to < doclist.length and format[to].length isnt format[from].length
-      al "to: #{to}"
 
       # and push the further `untraverse`d individual subject, object and predicate
       # components into `result`
@@ -104,7 +78,6 @@
         # nested array at it's place
         result.push idof doclist[from]
       from = to
-    al "returning full result: #{JSON.stringify result}"
     result
 
   # Given a `doclist`, `getAnswersFrom` generates all the `query`, `answer`, `format`
@@ -171,10 +144,6 @@
     # `getAnswersFrom` the doclist and pass a callback in, to be called
     # for every (query, answer, format)
     getAnswersFrom doclist, (query, answer, format)->
-      al "emitting query: #{say query}"
-      al "and answer: #{say answer}"
-      al "with format: #{say format}"
-
       # Turn the flat query array generated into a nested `queryarr`, using its `format`
       queryarr = untraverse query, format
       # and likewise for `answer`
