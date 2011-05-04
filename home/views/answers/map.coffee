@@ -1,26 +1,37 @@
 (doc)->
-  # TODO:
-  #
-  # * Don't emit results for [null, null, null] queries
-  #
-  # Browser testing stuff. To be removed
+
+  # Browser testing stuff. TODO: To be removed
   al = -> true
-  cl = console.log
-  emit = (q, a)->
-    cl "query:"; cl q
-    cl "answer: "; cl a
-    cl "--------"
-  say = (arg)->
+  #cl = console.log
+  #emit = (q, a)->
+    #cl "query:"; cl q
+    #cl "answer: "; cl a
+    #cl "--------"
+
+  say = (arg)-> true
+    #if arg?
+      #if arg.push?
+        #return (say d for d in arg)
+      #else if arg.slice?
+        #return arg
+      #else
+        #if arg.value
+          #return arg.value
+        #else
+         #return "R"
+    #else
+      #return null
+
+  ## Helper Functions
+  # 
+  # Returns the id of a doc, `null` otherwise.
+  # Also works for arrays, returning an array of the doc ids
+  idof = (arg)->
     if arg?
-      if arg.push?
-        return (say d for d in arg)
-      else if arg.slice?
-        return arg
+      if arg.push? and arg.length?
+        return (idof d for d in arg)
       else
-        if arg.value
-          return arg.value
-        else
-         return "R"
+        return arg._id
     else
       return null
 
@@ -41,7 +52,7 @@
           # Every element in `doclist` consists of these properties:
           d =
             # it's document id (as stored in database)
-            id: d_id
+            _id: d_id
             # whether it's an item or relation
             type: alldocs[d_id].type
             # it's hierarchical level in the doc structure
@@ -59,7 +70,7 @@
   # ( ram - said - ( hanuman - love - icecream ) )
   untraverse = (doclist, format)->
     al "doclist: #{say doclist}"
-    # If we're untraversing a simple subject, predicate, object triplet
+    # If we're `untraverse`ing a simple subject, predicate, object triplet
     # where all three are items
     if doclist.length is 3 and (f.slice(-1) for f in format).join("") is "spo"
       [slevel, plevel, olevel] = (f.length for f in format)
@@ -67,7 +78,7 @@
         # then just check for the integrity of the received format and
         al "returning small: #{say doclist}"
         # return the string representations of the subject, predicate and object
-        return (say d for d in doclist)
+        return (idof d for d in doclist)
       else
         # make some noise if data integrity failed
         throw "slevel, plevel, olevel aren't same"
@@ -91,7 +102,7 @@
       else
         # Note that an item doesn't need `untraverse`ing, you just put it in the
         # nested array at it's place
-        result.push say doclist[from]
+        result.push idof doclist[from]
       from = to
     al "returning full result: #{JSON.stringify result}"
     result
@@ -103,14 +114,26 @@
   # and thus have a different recursion path for all the possibilities where any of
   # the elements may or may not be in the query.
   getAnswersFrom = (doclist, callback, query, answer, format, k)->
-    # `recurse` here just saves typing
+    # `recurse` here removes queries that have null in all fields. ie. s, p, o
+    # and also saves typing by lowering the number of arguments in the
+    # recursive calls later
     recurse = (q, a, f, n)->
-      getAnswersFrom doclist,
-        callback,
-        query.concat(q),
-        answer.concat(a),
-        format.concat(f)
-        n
+      # So don't include the cases where the last 3 elements in `query` have been null,
+      unless q is null and
+        query[query.length-1] is null and
+        query[query.length-2] is null and
+        # and they're at the same hierarchical level in the query
+        f[f.length-1] is "o" and
+        format[format.length-1] is f[0...-1]+"p" and
+        format[format.length-2] is f[0...-1]+"s"
+          # Otherwise just recurse on along
+          getAnswersFrom doclist,
+            callback,
+            query.concat(q),
+            answer.concat(a),
+            format.concat(f)
+            n
+
     query ?= []
     answer ?= []
     format ?= []
@@ -121,6 +144,7 @@
       callback query, answer, format
     else
       thisdoc = doclist[k]
+
       # If the current doc in `doclist` is an item, you just start 2 recursion paths,
       # one where it's included in the `query` and one where it's not
       # Note that you also pass it's exact hierarchical position in the original
@@ -131,14 +155,14 @@
       else if thisdoc.type is "relation"
         # But if the current doc is a relation
         n = k+1
-        # then either we just take it, and simply recurse on to it's subject, etc
+        # then either we just take it, and simply recurse on, to it's subject, etc
         recurse thisdoc, null, thisdoc.pos, n
         # or we don't select it, and thus also skip recursion for all it's constituents
         n += 1 while n<doclist.length and doclist[n].pos.length isnt doclist[k].pos.length
         recurse null, thisdoc, thisdoc.pos, n
 
-  # With the helper functions defined, this is where execution actually begins
-  #
+  ## Actual execution
+  # 
   # If the document passed to this view map is a relation,
   if doc.type is "relation"
     # traverse the doc and make the flat array structure called `doclist`
@@ -158,4 +182,3 @@
 
       # Emit the damn pair
       emit queryarr, answerarr
-      
