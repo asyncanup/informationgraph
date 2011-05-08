@@ -2,16 +2,21 @@
 
   ## Helper Functions
   # 
-  # Returns the id of a doc, `null` otherwise.
-  # Also works for arrays, returning an array of the doc ids
-  idof = (arg)->
+  # `getProperty` is the generic function used by `getId` and `getValue`.
+  # Also works for arrays, returning an array of the doc properties
+  getProperty = (arg, property)->
     if arg?
       if arg.push? and arg.length?
-        return (idof d for d in arg)
+        return (getProperty d, property for d in arg)
       else
-        return arg._id
+        return arg[property]
     else
       return null
+  # `getId` returns the id of a doc, `null` otherwise.
+  getId = (doc)-> getProperty doc, "_id"
+  # `getValue` returns value property of the doc
+  # (which may be undefined if there is no value property)
+  getValue = (doc)-> getProperty doc, "value"
 
   # Traverse the doc and transform its structure into a flat array.
   # 
@@ -46,7 +51,7 @@
   # It takes the doc structure from the format array passed.
   # Example format array: ["s", "p", "o", "os", "op", "oo"] for the relation
   # ( ram - said - ( hanuman - love - icecream ) )
-  untraverse = (doclist, format)->
+  untraverse = (doclist, format, partOf)->
     # If we're `untraverse`ing a simple subject, predicate, object triplet
     # where all three are items
     if doclist.length is 3 and (f.slice(-1) for f in format).join("") is "spo"
@@ -54,7 +59,7 @@
       if slevel is plevel is olevel
         # then just check for the integrity of the received format and
         # return the ids of its subject, predicate and object respectively
-        return (idof d for d in doclist)
+        return (partOf d for d in doclist)
       else
         # make some noise if data integrity failed
         throw "slevel, plevel, olevel aren't same"
@@ -72,11 +77,11 @@
       # and push the further `untraverse`d individual subject, object and predicate
       # components into `result`
       if from+1 < to-1
-        result.push untraverse doclist[from+1..to-1], format[from+1..to-1]
+        result.push untraverse doclist[from+1..to-1], format[from+1..to-1], partOf
       else
         # Note that an item doesn't need `untraverse`ing, you just put it in the
         # nested array at it's place
-        result.push idof doclist[from]
+        result.push partOf doclist[from]
       from = to
     result
 
@@ -134,6 +139,20 @@
         n += 1 while n<doclist.length and doclist[n].pos.length isnt doclist[k].pos.length
         recurse null, thisdoc, thisdoc.pos, n
 
+  # `contains` parses the subjects and objects in the `queryarr`
+  # (the nested query array containing item values) and returns a flat array
+  # with the things in order, skipping the predicates and `null` values altogether.
+  fuzzy = (query)->
+    list = []
+    for spo in query
+      if spo is null
+        list = list
+      else if typeof spo is "string"
+        list = list.concat spo
+      else if spo.push? and spo.length?
+        list = list.concat fuzzy spo
+    return list.sort()
+
   ## Actual execution
   # 
   # If the document passed to this view map is a relation,
@@ -143,11 +162,15 @@
 
     # `getAnswersFrom` the doclist and pass a callback in, to be called
     # for every (query, answer, format)
-    getAnswersFrom doclist, (query, answer, format)->
-      # Turn the flat query array generated into a nested `queryarr`, using its `format`
-      queryarr = untraverse query, format
+    getAnswersFrom doclist, (queryarr, answerarr, format)->
+      # Turn the flat query array generated into a nested `queryarr`, using its `format`,
+      # and a transformation function to get the relevant part of the doc
+      query = untraverse queryarr, format, getValue
       # and likewise for `answer`
-      answerarr = untraverse answer, format
+      answer = untraverse answerarr, format, getId
+      # Then we make a less strict query array than `queryarr` 
+      # so as to be able to provide answer suggestions when there are no answers otherwise
+      fuzzyquery = fuzzy query
 
-      # Emit the damn pair
-      emit queryarr, answerarr
+      # And then emit the damn thing already!
+      emit [fuzzyquery, query], answer
