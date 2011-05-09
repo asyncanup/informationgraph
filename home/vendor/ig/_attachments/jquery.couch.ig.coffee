@@ -207,17 +207,22 @@ do (jQuery)->
       ig.notify "Please enter a value"
       false
     else
-      item =
-        type: "item"
-        value: val
-        created: timestamp()
-      db.saveDoc item,
-        success: (data)->
-          l "saved new item"
-          ig.doc data.id, (doc)->
-            ig.notify "Created: #{doc}"
-            whenSaved doc
-        error: couchError "Could not create item '#{val}'"
+      ig.search "home/allItems",
+        key: val
+        limit: 1
+        (doc)-> ig.notify "'#{val}' already exists"
+        ->
+          item =
+            type: "item"
+            value: val
+            created: timestamp()
+          db.saveDoc item,
+            success: (data)->
+              l "saved new item"
+              ig.doc data.id, (doc)->
+                ig.notify "Created: #{doc}"
+                whenSaved doc
+            error: couchError "Could not create item '#{val}'"
 
   ig.deleteDoc = (id, whenDeleted, forcingIt)->
     throw "deleteDoc needs id" unless id?

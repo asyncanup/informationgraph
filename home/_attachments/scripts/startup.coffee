@@ -177,6 +177,16 @@ $(document).ready ->
         render doc, "#queryRelationList", "#relationTemplate"
     false
 
+  sb = $ "#itemList"
+  sb.delegate ".itemValue", "dblclick", ->
+    e = docElem this
+    id = e.attr "doc_id"
+    ig.doc id, (doc)->
+      e.after $("#itemEditTemplate").tmpl doc
+      e.remove()
+      findOnPage(doc, "#itemList").find("input:first").focus()
+    false
+
 #### TODO list: 
 # 
 # * Complete this _docco_mentation
