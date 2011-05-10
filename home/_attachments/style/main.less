@@ -129,6 +129,8 @@ input {
 
 .spoStuff() {
   line-height:        @spo-line-height;
+  height:             @spo-line-height;
+  overflow:           hidden;
   background-color:   @light-primary-2;
   border:             1px solid @dark-primary-2;
   &:hover {
@@ -225,6 +227,9 @@ input {
     .docSearch {
       .spoMain;
     }
+  }
+  .constituents {
+    /*display:                none;*/
   }
   .relationSelect {
     .relationOption;

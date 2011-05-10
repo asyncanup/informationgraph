@@ -176,6 +176,11 @@ $(document).ready ->
       render:       (doc)->
         render doc, "#queryRelationList", "#relationTemplate"
     false
+  co.delegate ".spo .docSearch", "hover", ->
+    e = docElem this
+    id = e.attr "doc_id"
+    r = docElem e.parent()
+    constituents = $ ".constituents:first", r
 
   sb = $ "#itemList"
   sb.delegate ".itemValue", "dblclick", ->
@@ -190,3 +195,5 @@ $(document).ready ->
 #### TODO list: 
 # 
 # * Complete this _docco_mentation
+# * Change templating engine
+# * Get the `constituents` of an `relation` showing
