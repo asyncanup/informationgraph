@@ -104,8 +104,11 @@ $(document).ready ->
       elems.each (i, e)->
         e = $ e
         e.addClass "#{elemType(e)}Selected"
-        e.find(".docSelect:last").find(".optionText")
-          .text selectText[index]
+        if elemType(e) is "relation"
+          s = e.find(".constituents:first").prev().find(".docSelect:last")
+        else
+          s = e.find(".docSelect:last")
+        s.find(".optionText").text(selectText[index])
     # Unselect handler only needs the doc to be unselected
     (doc)->
       unSelectText = "-"
@@ -114,8 +117,11 @@ $(document).ready ->
         e = $ e
         e.removeClass "#{elemType(e)}Selected"
         # `.docSelect:last` because otherwise an spo's `.docSelect` might be chosen
-        e.find(".docSelect:last").find(".optionText")
-          .text unSelectText
+        if elemType(e) is "relation"
+          s = e.find(".constituents:first").prev().find(".docSelect:last")
+        else
+          s = e.find(".docSelect:last")
+        s.find(".optionText").text(unSelectText)
   )
 
   # `linkPlaceholder` links a placeholder (just a container div) with a view query
@@ -190,7 +196,8 @@ $(document).ready ->
       if doc.type is "relation"
         ct.slideUp "fast", ->
           ct.html $("#relationTemplate").tmpl doc
-          ct.slideDown "slow"
+          ct.slideDown "slow", ->
+            ig.handleGuiSelection doc
       false
 
 

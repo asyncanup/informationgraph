@@ -22,16 +22,6 @@ do (jQuery)->
   defaultCallback = (whatever)-> l "defaultCallback: #{whatever}"
   refreshDoc = (whatever)-> l "default refreshDoc: #{doc}"
   selectionIndex = {}
-  handleGuiSelection = (doc)->
-    throw "handleGuiSelection needs doc" unless doc?
-    if selectionIndex[doc._id]
-      guiDocSelect doc, selectionIndex[doc._id]
-    else
-      guiDocUnSelect doc
-    if doc.type is "relation"
-      handleGuiSelection doc.getSubject()
-      handleGuiSelection doc.getPredicate()
-      handleGuiSelection doc.getObject()
   guiDocSelect = (doc)-> l "default guiDocSelect: #{doc}"
   guiDocUnSelect = (doc)-> l "default guiDocUnSelect: #{doc}"
   l = (str)-> window.console.log "ig: #{str}" if window.console and debugMode
@@ -112,6 +102,17 @@ do (jQuery)->
             callback d
         error: couchError "could not open document: #{id}"
 
+  ig.handleGuiSelection = (doc)->
+    throw "ig.handleGuiSelection needs doc" unless doc?
+    if selectionIndex[doc._id]
+      guiDocSelect doc, selectionIndex[doc._id]
+    else
+      guiDocUnSelect doc
+    if doc.type is "relation"
+      ig.handleGuiSelection doc.getSubject()
+      ig.handleGuiSelection doc.getPredicate()
+      ig.handleGuiSelection doc.getObject()
+
   ig.search = (view, query, resultDocCallback, noResultsCallback, dontNotify)->
     throw "search needs view" unless view?
     throw "search needs resultDocCallback" unless noResultsCallback?
@@ -156,7 +157,7 @@ do (jQuery)->
         ig.search options.view, options.query,
           (doc)->
             options.render doc
-            handleGuiSelection doc
+            ig.handleGuiSelection doc
             l "refresh: rendered #{doc}"
           -> l "refresh: no results for the #{options.view} query in #{placeholder}"
 
@@ -173,7 +174,7 @@ do (jQuery)->
         else if arg._deleted or arg.type?
           l "refreshDoc: #{arg}"
           refreshDoc arg
-          handleGuiSelection arg
+          ig.handleGuiSelection arg
           ig.notify "#{arg} got deleted" if arg._deleted
       else
         l "refresh: everything"
