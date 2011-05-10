@@ -21,6 +21,14 @@ $(document).ready ->
 
   # Local variable _ig_ for easier reference
   ig = $.ig
+
+  prepare = (d)->
+    doc = $.extend {}, d
+    if doc.type is "relation"
+      doc.subjectDoc = d.getSubject()
+      doc.predicateDoc = d.getPredicate()
+      doc.objectDoc = d.getObject()
+    doc
   
   # Helper function to handle all rendering of items/relations supposed to be on the page
   render = (doc, placeholder, template)->
@@ -30,11 +38,7 @@ $(document).ready ->
       ig.refresh doc
     else
       # else make a new doc
-      d = $.extend {}, doc
-      if doc.type is "relation"
-        d.subjectDoc = d.getSubject()
-        d.predicateDoc = d.getPredicate()
-        d.objectDoc = d.getObject()
+      d = prepare doc
       cl "appending #{d}"
       # and put it in the placeholder using the template specified
       $(placeholder).append $(template).tmpl(d)
@@ -176,11 +180,19 @@ $(document).ready ->
       render:       (doc)->
         render doc, "#queryRelationList", "#relationTemplate"
     false
-  co.delegate ".spo .docSearch", "hover", ->
-    e = docElem this
-    id = e.attr "doc_id"
-    r = docElem e.parent()
-    constituents = $ ".constituents:first", r
+  co.delegate ".spo .docSearch", "mouseover",
+    ->
+      e = docElem this
+      id = e.attr "doc_id"
+      r = docElem e.parent()
+      ct = $ ".constituents:first", r
+      doc = prepare e.tmplItem().data
+      if doc.type is "relation"
+        ct.slideUp "fast", ->
+          ct.html $("#relationTemplate").tmpl doc
+          ct.slideDown "slow"
+      false
+
 
   sb = $ "#itemList"
   sb.delegate ".itemValue", "dblclick", ->
