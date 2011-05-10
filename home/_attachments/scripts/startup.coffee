@@ -214,5 +214,3 @@ $(document).ready ->
 #### TODO list: 
 # 
 # * Complete this _docco_mentation
-# * Change templating engine
-# * Get the `constituents` of an `relation` showing

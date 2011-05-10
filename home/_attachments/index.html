@@ -56,6 +56,9 @@
   <script id="relationTemplate" type="text/x-jquery-tmpl">
     <div doc_id="${_id}" class="relation">
       <table><tr>
+        <td class="sentence">
+          <div class="yes" title="This triplet is a sentence">&#x2714</div>
+        </td>
         <td class="subject">{{tmpl(subjectDoc) "#spoTemplate"}}</td>
         <td class="predicate">{{tmpl(predicateDoc) "#spoTemplate"}}</td>
         <td class="object">{{tmpl(objectDoc) "#spoTemplate"}}</td>
