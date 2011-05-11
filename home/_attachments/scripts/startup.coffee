@@ -186,20 +186,28 @@ $(document).ready ->
       render:       (doc)->
         render doc, "#queryRelationList", "#relationTemplate"
     false
-  co.delegate ".spo .docSearch", "mouseover",
-    ->
-      e = docElem this
-      id = e.attr "doc_id"
-      r = docElem e.parent()
-      ct = $ ".constituents:first", r
-      doc = prepare e.tmplItem().data
-      if doc.type is "relation"
-        ct.slideUp "fast", ->
-          ct.html $("#relationTemplate").tmpl doc
-          ct.slideDown "slow", ->
-            ig.handleGuiSelection doc
-      false
-
+  co.delegate ".spo .docSearch", "mouseover", ->
+    e = docElem this
+    id = e.attr "doc_id"
+    r = docElem e.parent()
+    ct = $ ".constituents:first", r
+    doc = prepare e.tmplItem().data
+    if doc.type is "relation"
+      ct.slideUp "fast", ->
+        ct.html $("#relationTemplate").tmpl doc
+        ct.slideDown "slow", ->
+          ig.handleGuiSelection doc
+    false
+  co.delegate ".relation .sentence .tick", "click", ->
+    e = docElem this
+    tick = $ this
+    tcode = '&#x2714'
+    id = e.attr "doc_id"
+    if tick.text() is tcode
+      ig.tag id, "sentence", false, -> tick.text '-'
+    else
+      ig.tag id, "sentence", true, -> tick.text tcode
+    false
 
   sb = $ "#itemList"
   sb.delegate ".itemValue", "dblclick", ->

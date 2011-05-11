@@ -250,6 +250,7 @@ do (jQuery)->
         -> removeNow id
 
   ig.editItem = (id, newVal)->
+    # TODO: make this use and update handler
     throw "editItem needs id" unless id?
     whenEdited ?= defaultCallback
     ig.doc id, (doc)->
@@ -264,58 +265,72 @@ do (jQuery)->
         error: couchError "Could not edit #{doc}"
 
   ig.selectDoc = (id)->
-      throw "selectDoc needs id" unless id?
+    throw "selectDoc needs id" unless id?
 
-      select = (doc)->
-        selectedSpo.push doc
-        selectionIndex[doc._id] = selectedSpo.length
-        l "selected: #{doc}"
-        guiDocSelect doc, selectionIndex[doc._id]
-        makeRelation() if selectedSpo.length is 3
+    select = (doc)->
+      selectedSpo.push doc
+      selectionIndex[doc._id] = selectedSpo.length
+      l "selected: #{doc}"
+      guiDocSelect doc, selectionIndex[doc._id]
+      makeRelation() if selectedSpo.length is 3
 
-      unselect = (doc)->
-        selectedSpo.pop()
-        selectionIndex[doc._id] = 0
-        l "unselected: #{doc}"
-        guiDocUnSelect doc
+    unselect = (doc)->
+      selectedSpo.pop()
+      selectionIndex[doc._id] = 0
+      l "unselected: #{doc}"
+      guiDocUnSelect doc
 
-      makeRelation = ->
-        l "subject, predicate and object selected, making relation"
-        spo = [s, p, o] = ($.extend {}, x for x in selectedSpo)
-        relation =
-          type: "relation"
-          subject: s._id
-          predicate: p._id
-          object: o._id
-          docs: {}
-          created: timestamp()
-        for x in spo
-          $.extend relation.docs, x.docs if x.type is "relation"
-          delete x.docs
-          relation.docs[x._id] = x
-        db.saveDoc relation,
-          success: (data)->
-            for spo in selectedSpo
-              selectionIndex[spo._id] = 0
-              guiDocUnSelect spo
-            selectedSpo = []
-            ig.doc data.id, (relation)->
-              ig.notify "Created: #{relation}"
-          error: couchError "Could not make relation"
+    makeRelation = ->
+      l "subject, predicate and object selected, making relation"
+      spo = [s, p, o] = ($.extend {}, x for x in selectedSpo)
+      relation =
+        type: "relation"
+        subject: s._id
+        predicate: p._id
+        object: o._id
+        docs: {}
+        created: timestamp()
+      for x in spo
+        $.extend relation.docs, x.docs if x.type is "relation"
+        delete x.docs
+        relation.docs[x._id] = x
+      db.saveDoc relation,
+        success: (data)->
+          for spo in selectedSpo
+            selectionIndex[spo._id] = 0
+            guiDocUnSelect spo
+          selectedSpo = []
+          ig.doc data.id, (relation)->
+            ig.notify "Created: #{relation}"
+        error: couchError "Could not make relation"
 
-      ig.doc id, (doc)->
-        if selectedSpo.length isnt 0
-          if doc._id is selectedSpo[selectedSpo.length-1]._id
-            unselect doc
-          else if doc._id in (spo._id for spo in selectedSpo)
-            ig.notify "Sorry, already selected that one"
-          else if selectedSpo.length is 3
-            ig.notify "Can't select more than 3"
-          else
-            select doc
+    ig.doc id, (doc)->
+      if selectedSpo.length isnt 0
+        if doc._id is selectedSpo[selectedSpo.length-1]._id
+          unselect doc
+        else if doc._id in (spo._id for spo in selectedSpo)
+          ig.notify "Sorry, already selected that one"
+        else if selectedSpo.length is 3
+          ig.notify "Can't select more than 3"
         else
           select doc
-      ig
+      else
+        select doc
+    ig
+
+  ig.tag = (id, name, value, callback)->
+    throw "ig.update needs an id" unless id?
+    throw "ig.update needs a tag name" unless name?
+    throw "ig.update needs a value" unless value?
+    $.ajax
+      url: "_update/tag/#{id}"
+      type: "PUT"
+      data:
+        name: name
+        value: value
+      success: (res)->
+        l res
+        callback res
 
   ig.setupLogin = (loginOptions, loggedIn, loggedOut)->
     throw "setupLogin needs login handler" unless loggedIn?
