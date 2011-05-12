@@ -98,6 +98,8 @@ $(document).ready ->
   # Handlers for _selecting_ or _unselecting_ a doc, so as to be included in a _relation_ being formed
   ig.docSelection(
     # Selection handler needs the doc as well as its position in [subject, predicate, object]
+    # TODO: Shouldn't need to do this, this should be handled by refreshDoc 
+    # (ig.refresh) and the template iteself
     (doc, index)->
       selectText = ["-", "s", "p", "o"]
       elems = findOnPage doc
