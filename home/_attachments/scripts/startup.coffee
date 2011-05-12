@@ -90,7 +90,7 @@ $(document).ready ->
           # otherwise replace the earlier copies with a new one
           e = $ e
           template = $ "##{elemType(e)}Template"
-          e.after template.tmpl doc
+          e.after template.tmpl prepare doc
           e.remove()
           # setting the data field needed by the jQuery template plugin
           $.tmplItem(e).data = doc
@@ -201,12 +201,12 @@ $(document).ready ->
   co.delegate ".relation .sentence .tick", "click", ->
     e = docElem this
     tick = $ this
-    tcode = '&#x2714'
     id = e.attr "doc_id"
-    if tick.text() is tcode
-      ig.tag id, "sentence", false, -> tick.text '-'
-    else
-      ig.tag id, "sentence", true, -> tick.text tcode
+    ig.doc id, (doc)->
+      if doc.sentence is "yes"
+        ig.tag id, "sentence", "no"
+      else
+        ig.tag id, "sentence", "yes"
     false
 
   sb = $ "#itemList"

@@ -1,8 +1,8 @@
 (doc, req)->
-  tag = req.query.name
-  value = req.query.value
-  if name? and value?
-    doc[name] = value
+  tag = req.form.tag
+  value = req.form.value
+  if tag? and value?
+    doc[tag] = value
     return [doc, "success"]
   else
-    return [doc, "Tag and Value parameters not specified"]
+    return [doc, "error"]

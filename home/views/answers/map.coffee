@@ -156,7 +156,7 @@
   ## Actual execution
   # 
   # If the document passed to this view map is a relation, and it's been tagged a sentence
-  if doc.type is "relation" and doc.sentence?
+  if doc.type is "relation" and doc.sentence is "yes"
     # traverse the doc and make the flat array structure called `doclist`
     doclist = traverse doc
 

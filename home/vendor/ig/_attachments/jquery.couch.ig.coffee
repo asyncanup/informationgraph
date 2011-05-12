@@ -318,19 +318,22 @@ do (jQuery)->
         select doc
     ig
 
-  ig.tag = (id, name, value, callback)->
-    throw "ig.update needs an id" unless id?
-    throw "ig.update needs a tag name" unless name?
-    throw "ig.update needs a value" unless value?
+  ig.tag = (id, tag, value, callback)->
+    throw "ig.tag needs an id" unless id?
+    throw "ig.tag needs a tag name" unless tag?
+    throw "ig.tag needs a tag value" unless value?
     $.ajax
       url: "_update/tag/#{id}"
       type: "PUT"
       data:
-        name: name
+        tag: tag
         value: value
       success: (res)->
-        l res
-        callback res
+        if res is "success"
+          ig.notify "#{tag} successfully #{if value is "yes" then "" else "un"}tagged"
+          callback res
+        else
+          ig.notify "Could not tag #{tag}"
 
   ig.setupLogin = (loginOptions, loggedIn, loggedOut)->
     throw "setupLogin needs login handler" unless loggedIn?

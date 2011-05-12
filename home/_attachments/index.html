@@ -57,21 +57,26 @@
     <div doc_id="${_id}" class="relation">
       <table><tr>
         <td class="sentence">
-          <div class="tick" title="This triplet is a sentence">&#x2714</div>
+          <div class="tick" title="Whether this triplet is a sentence">
+            {{if ($item.data.sentence && sentence === "yes")}}&#x2714;{{else}}-{{/if}}
+          </div>
         </td>
         <td class="subject">{{tmpl(subjectDoc) "#spoTemplate"}}</td>
         <td class="predicate">{{tmpl(predicateDoc) "#spoTemplate"}}</td>
         <td class="object">{{tmpl(objectDoc) "#spoTemplate"}}</td>
-        <td class="relationSelect docSelect">
-          <div class="relationSelectButton" title="Select relation">
-            <span class="optionText">-</span>
+        <td class="relationOptionContainer">
+          <div class="relationOption docSelect">
+            <div class="relationOptionButton" title="Select relation as spo">
+              <span class="optionText">-</span>
+            </div>
           </div>
-        </td>
-        <td class="relationSearch docSearch">
-          <div class="relationSearchButton" title="Search for this relation">o</div>
-        </td>
-        <td class="relationDelete docDelete">
-          <div class="relationDeleteButton" title="Delete relation">x</div>
+          <div class="relationOption docSearch">
+            <div class="relationOptionButton" title="Search for this relation">o</div>
+          </div>
+          <div class="separator">|</div>
+          <div class="relationOption docDelete">
+            <div class="relationOptionButton" title="Delete this relation">x</div>
+          </div>
         </td>
       </tr></table>
       <div class="constituents"></div>

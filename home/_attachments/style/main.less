@@ -103,9 +103,6 @@ input {
   }
 }
 
-.docSelect, .docSearch, .docDelete {
-}
-
 /* For .docSelect and .docDelete */
 .spoOption(){
   cursor:           pointer;
@@ -197,23 +194,6 @@ input {
   }
 }
 
-.relationOption() {
-  vertical-align:         middle;
-  color:                  @optionDefaultColor;
-  cursor:                 pointer;
-  &:hover {
-    color:                @optionFocusColor;
-  }
-}
-.relationOptionButton() {
-  .border-radius(9px);
-  border:                 1px solid gray;
-  background-color:       @dark-secondary-2;
-  height:                 18px;
-  margin:                 0 2px;
-  text-align:             center;
-  width:                  @spoOption-width;
-}
 .relation {
   border:                   1px solid transparent;
   &:hover {
@@ -229,8 +209,10 @@ input {
     }
   }
   .sentence {
+    width:                  15px;
+    padding-right:          5px;
     vertical-align:         middle;
-    padding-right:          8px;
+    text-align:             center;
     color:                  darkgray;
     .tick {
       cursor:               pointer;
@@ -242,22 +224,31 @@ input {
   .constituents {
   }
   .relationSelect {
-    .relationOption;
-    .relationSelectButton {
-      .relationOptionButton;
-      margin-left:          8px;
-    }
+    
   }
-  .relationSearch {
-    .relationOption;
-    .relationSearchButton {
-      .relationOptionButton;
+  .relationOptionContainer {
+    padding-left:             8px;
+    .separator {
+      color:                  lightgrey;
+      display:                inline;
     }
-  }
-  .relationDelete {
-    .relationOption;
-    .relationDeleteButton {
-      .relationOptionButton;
+    .relationOption {
+      display:                inline;
+      vertical-align:         middle;
+      color:                  @optionDefaultColor;
+      cursor:                 pointer;
+      &:hover {
+        color:                @optionFocusColor;
+      }
+      .relationOptionButton {
+        .border-radius(9px);
+        display:              inline;
+        border:               1px solid gray;
+        background-color:     @dark-secondary-2;
+        margin:               0 2px;
+        padding:              0 3px;
+        text-align:           center;
+      }
     }
   }
 }
