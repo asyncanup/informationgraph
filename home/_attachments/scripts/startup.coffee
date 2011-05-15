@@ -65,6 +65,13 @@ $(document).ready ->
     for type in ["item", "spo", "relation"]
       return type if e.hasClass type
   
+  # Returns the id of the doc clicked on
+  idof = (e)->
+    # by figuring out the doc element immediately surrounding the html element clicked on
+    e = docElem e
+    # and returning its `doc_id` attribute
+    return e.attr "doc_id"
+
   # Start IG's debug mode
   ig.debug "start"
   # Set database
@@ -98,8 +105,6 @@ $(document).ready ->
   # Handlers for _selecting_ or _unselecting_ a doc, so as to be included in a _relation_ being formed
   ig.docSelection(
     # Selection handler needs the doc as well as its position in [subject, predicate, object]
-    # TODO: Shouldn't need to do this, this should be handled by refreshDoc 
-    # (ig.refresh) and the template iteself
     (doc, index)->
       selectText = ["-", "s", "p", "o"]
       elems = findOnPage doc
@@ -167,18 +172,13 @@ $(document).ready ->
       render doc, "#itemList", "#itemTemplate"
     false
   co.delegate ".docSelect", "click", ->
-    e = docElem this
-    id = e.attr "doc_id"
-    ig.selectDoc id
+    ig.selectDoc idof this
     false
   co.delegate ".docDelete", "click", ->
-    e = docElem this
-    id = e.attr "doc_id"
-    ig.deleteDoc id
+    ig.deleteDoc idof this
     false
   co.delegate ".docSearch", "click", ->
-    e = docElem this
-    id = e.attr "doc_id"
+    id = idof this
     ig.linkPlaceholder "#queryRelationList",
       view:         "home/relations"
       query:
@@ -190,7 +190,6 @@ $(document).ready ->
     false
   co.delegate ".spo .docSearch", "mouseover", ->
     e = docElem this
-    id = e.attr "doc_id"
     r = docElem e.parent()
     ct = $ ".constituents:first", r
     doc = prepare e.tmplItem().data
@@ -201,9 +200,8 @@ $(document).ready ->
           ig.handleGuiSelection doc
     false
   co.delegate ".relation .sentence .tick", "click", ->
-    e = docElem this
     tick = $ this
-    id = e.attr "doc_id"
+    id = idof this
     ig.doc id, (doc)->
       if doc.sentence is "yes"
         ig.tag id, "sentence", "no"
@@ -213,8 +211,7 @@ $(document).ready ->
 
   sb = $ "#itemList"
   sb.delegate ".itemValue", "dblclick", ->
-    e = docElem this
-    id = e.attr "doc_id"
+    id = idof this
     ig.doc id, (doc)->
       e.after $("#itemEditTemplate").tmpl doc
       e.remove()
@@ -224,3 +221,5 @@ $(document).ready ->
 #### TODO list: 
 # 
 # * Complete this _docco_mentation
+# * Implement hashchange (for back button, history navigation)
+# * Change relation spo's and constituent div's background colors

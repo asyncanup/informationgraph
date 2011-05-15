@@ -1,8 +1,3 @@
-  # TODO:
-  #
-  # * Add a `two_way`: `true`/`false` attribute to relations
-  # * Possibly emit `answers` queries as complex keys, so that when no results 
-  #   are found for a query, it can be generalised and run again.
 do (jQuery)->
   $ = jQuery
   ig = $.ig ?= {}
@@ -70,8 +65,6 @@ do (jQuery)->
         for d in feed.results
           if cache.find d.id
             if d.deleted
-              ### the deleted property is what couchdb 
-                  sets in feed results. not mine ###
               doc = cache.get d.id
               l "#{doc} deleted"
               doc._deleted = true
@@ -250,7 +243,6 @@ do (jQuery)->
         -> removeNow id
 
   ig.editItem = (id, newVal)->
-    # TODO: make this use and update handler
     throw "editItem needs id" unless id?
     whenEdited ?= defaultCallback
     ig.doc id, (doc)->
@@ -376,4 +368,12 @@ do (jQuery)->
           db.removeDoc row.doc unless row.id.substr(0, 8) is "_design/"
       error: couchError "Could not empty the database"
 
-
+#### TODO list:
+#
+# * Doccomentation
+# * Add a `two_way`: `true`/`false` attribute to relations
+# * Make ig.editItem use an update handler
+# * Merge ig.docSelection functionality with refreshDoc and remove ig.docSelection
+# * Changes hose should check if the received id is present on the page
+# * doc.docs should be an attachment and the attachment should be requested only if
+#   the spo isn't already present in the cache
