@@ -5,4 +5,4 @@
     doc[tag] = value
     return [doc, "success"]
   else
-    return [doc, "error"]
+    return [null, "error"]
