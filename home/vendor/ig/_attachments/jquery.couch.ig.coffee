@@ -16,7 +16,6 @@ do (jQuery)->
 
   defaultCallback = (whatever)-> l "defaultCallback: #{whatever}"
   refreshDoc = (whatever)-> l "default refreshDoc: #{doc}"
-  selectionIndex = {}
   guiDocSelect = (doc)-> l "default guiDocSelect: #{doc}"
   guiDocUnSelect = (doc)-> l "default guiDocUnSelect: #{doc}"
   l = (str)-> window.console.log "ig: #{str}" if window.console and debugMode
@@ -25,7 +24,6 @@ do (jQuery)->
     ### Makes a doc returned by db.openDoc apt for ig's consumption 
         (putting into cache, letting it be selected, etc)
     ###
-    selectionIndex[doc._id] = 0
     setupSpo = (spo)->
       switch spo.type
         when "item"
@@ -79,6 +77,8 @@ do (jQuery)->
       l "_changes feed set up"
       ig
 
+  ig.selectionIndex = {}
+
   ig.doc = (id, callback, forceFetch)->
     throw "ig.doc needs id" unless id?
     throw "ig.doc needs a callback" unless callback?
@@ -91,14 +91,16 @@ do (jQuery)->
             prepare d
             cache.remove d._id
             cache.put d._id, d
+            ig.selectionIndex[d._id] ?= 0 # "-"
             l "#{d.type} fetched: #{d}"
             callback d
         error: couchError "could not open document: #{id}"
 
   ig.handleGuiSelection = (doc)->
+    #return false
     throw "ig.handleGuiSelection needs doc" unless doc?
-    if selectionIndex[doc._id]
-      guiDocSelect doc, selectionIndex[doc._id]
+    if ig.selectionIndex[doc._id]
+      guiDocSelect doc, ig.selectionIndex[doc._id]
     else
       guiDocUnSelect doc
     if doc.type is "relation"
@@ -132,6 +134,7 @@ do (jQuery)->
     ig
 
   ig.docSelection = (select, unselect)->
+    #return false
     throw "docSelection needs gui selection handler" unless select?
     throw "docSelection needs gui unselection handler" unless unselect?
     guiDocSelect = select
@@ -261,14 +264,14 @@ do (jQuery)->
 
     select = (doc)->
       selectedSpo.push doc
-      selectionIndex[doc._id] = selectedSpo.length
+      ig.selectionIndex[doc._id] = selectedSpo.length # (["-", "s", "p", "o"])[selectedSpo.length]
       l "selected: #{doc}"
-      guiDocSelect doc, selectionIndex[doc._id]
+      guiDocSelect doc, ig.selectionIndex[doc._id]
       makeRelation() if selectedSpo.length is 3
 
     unselect = (doc)->
       selectedSpo.pop()
-      selectionIndex[doc._id] = 0
+      ig.selectionIndex[doc._id] = 0 #'-'
       l "unselected: #{doc}"
       guiDocUnSelect doc
 
@@ -289,7 +292,7 @@ do (jQuery)->
       db.saveDoc relation,
         success: (data)->
           for spo in selectedSpo
-            selectionIndex[spo._id] = 0
+            ig.selectionIndex[spo._id] = 0 #'-'
             guiDocUnSelect spo
           selectedSpo = []
           ig.doc data.id, (relation)->

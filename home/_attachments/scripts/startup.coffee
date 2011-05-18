@@ -24,6 +24,7 @@ $(document).ready ->
 
   prepare = (d)->
     doc = $.extend {}, d
+    doc.igSelectionIndex = ig.selectionIndex[doc._id]
     if doc.type is "relation"
       doc.subjectDoc = d.getSubject()
       doc.predicateDoc = d.getPredicate()
@@ -223,3 +224,4 @@ $(document).ready ->
 # * Complete this _docco_mentation
 # * Implement hashchange (for back button, history navigation)
 # * Change relation spo's and constituent div's background colors
+# * Bug: Sentences selection doesn't show when the constituent docs slide down
