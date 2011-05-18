@@ -370,10 +370,10 @@ do (jQuery)->
 
 #### TODO list:
 #
-# * Doccomentation
 # * Add a `two_way`: `true`/`false` attribute to relations
 # * Make ig.editItem use an update handler
 # * Merge ig.docSelection functionality with refreshDoc and remove ig.docSelection
 # * Changes hose should check if the received id is present on the page
 # * doc.docs should be an attachment and the attachment should be requested only if
 #   the spo isn't already present in the cache
+# * Doccomentation
