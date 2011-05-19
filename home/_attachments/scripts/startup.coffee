@@ -24,25 +24,25 @@ $(document).ready ->
 
   prepare = (d)->
     doc = $.extend {}, d
-    doc.igSelectionIndex = ig.selectionIndex[doc._id]
+    doc.igSelectionIndex = ig.selectionIndex[doc._id] ?= '-'
     if doc.type is "relation"
-      doc.subjectDoc = d.getSubject()
-      doc.predicateDoc = d.getPredicate()
-      doc.objectDoc = d.getObject()
+      doc.subjectDoc = prepare d.getSubject()
+      doc.predicateDoc = prepare d.getPredicate()
+      doc.objectDoc = prepare d.getObject()
     doc
   
   # Helper function to handle all rendering of items/relations supposed to be on the page
   render = (doc, placeholder, template)->
+    doc = prepare doc
     # If the element to be rendered is already on the page
     if onPage doc, placeholder
       # just refresh it right there, using `ig.refresh` (which has to be supplied to IG)
       ig.refresh doc
     else
       # else make a new doc
-      d = prepare doc
-      cl "appending #{d}"
+      cl "appending #{doc}"
       # and put it in the placeholder using the template specified
-      $(placeholder).append $(template).tmpl(d)
+      $(placeholder).append $(template).tmpl doc
 
   # Returns the html element corresponding to an IG doc, given its child element
   docElem = (elem)->
@@ -94,44 +94,16 @@ $(document).ready ->
         # Remove the elements if the doc has been deleted (in couch)
         elems.remove()
       else
+        doc = prepare doc
         elems.each (i, e)->
           # otherwise replace the earlier copies with a new one
           e = $ e
           template = $ "##{elemType(e)}Template"
-          e.after template.tmpl prepare doc
+          e.after template.tmpl doc
           e.remove()
           # setting the data field needed by the jQuery template plugin
           $.tmplItem(e).data = doc
     
-  # Handlers for _selecting_ or _unselecting_ a doc, so as to be included in a _relation_ being formed
-  ig.docSelection(
-    # Selection handler needs the doc as well as its position in [subject, predicate, object]
-    (doc, index)->
-      selectText = ["-", "s", "p", "o"]
-      elems = findOnPage doc
-      elems.each (i, e)->
-        e = $ e
-        e.addClass "#{elemType(e)}Selected"
-        if elemType(e) is "relation"
-          s = e.find(".constituents:first").prev().find(".docSelect:last")
-        else
-          s = e.find(".docSelect:last")
-        s.find(".optionText").text(selectText[index])
-    # Unselect handler only needs the doc to be unselected
-    (doc)->
-      unSelectText = "-"
-      elems = findOnPage doc
-      elems.each (i, e)->
-        e = $ e
-        e.removeClass "#{elemType(e)}Selected"
-        # `.docSelect:last` because otherwise an spo's `.docSelect` might be chosen
-        if elemType(e) is "relation"
-          s = e.find(".constituents:first").prev().find(".docSelect:last")
-        else
-          s = e.find(".docSelect:last")
-        s.find(".optionText").text(unSelectText)
-  )
-
   # `linkPlaceholder` links a placeholder (just a container div) with a view query
   ig.linkPlaceholder "#itemList",
     view:         "home/allItems"
@@ -197,8 +169,7 @@ $(document).ready ->
     if doc.type is "relation"
       ct.slideUp "fast", ->
         ct.html $("#relationTemplate").tmpl doc
-        ct.slideDown "slow", ->
-          ig.handleGuiSelection doc
+        ct.slideDown "slow"
     false
   co.delegate ".relation .sentence .tick", "click", ->
     tick = $ this

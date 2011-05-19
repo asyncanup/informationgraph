@@ -16,8 +16,6 @@ do (jQuery)->
 
   defaultCallback = (whatever)-> l "defaultCallback: #{whatever}"
   refreshDoc = (whatever)-> l "default refreshDoc: #{doc}"
-  guiDocSelect = (doc)-> l "default guiDocSelect: #{doc}"
-  guiDocUnSelect = (doc)-> l "default guiDocUnSelect: #{doc}"
   l = (str)-> window.console.log "ig: #{str}" if window.console and debugMode
   timestamp = -> (new Date()).getTime()
   prepare = (doc)->
@@ -91,22 +89,10 @@ do (jQuery)->
             prepare d
             cache.remove d._id
             cache.put d._id, d
-            ig.selectionIndex[d._id] ?= 0 # "-"
+            ig.selectionIndex[d._id] ?= '-'
             l "#{d.type} fetched: #{d}"
             callback d
         error: couchError "could not open document: #{id}"
-
-  ig.handleGuiSelection = (doc)->
-    #return false
-    throw "ig.handleGuiSelection needs doc" unless doc?
-    if ig.selectionIndex[doc._id]
-      guiDocSelect doc, ig.selectionIndex[doc._id]
-    else
-      guiDocUnSelect doc
-    if doc.type is "relation"
-      ig.handleGuiSelection doc.getSubject()
-      ig.handleGuiSelection doc.getPredicate()
-      ig.handleGuiSelection doc.getObject()
 
   ig.search = (view, query, resultDocCallback, noResultsCallback, dontNotify)->
     throw "search needs view" unless view?
@@ -133,14 +119,6 @@ do (jQuery)->
     l "gui notification handler set up"
     ig
 
-  ig.docSelection = (select, unselect)->
-    #return false
-    throw "docSelection needs gui selection handler" unless select?
-    throw "docSelection needs gui unselection handler" unless unselect?
-    guiDocSelect = select
-    guiDocUnSelect = unselect
-    ig
-
   ig.refresh = (arg)->
     refreshPlaceholder = (placeholder)->
       unless listeners[placeholder]?
@@ -153,7 +131,6 @@ do (jQuery)->
         ig.search options.view, options.query,
           (doc)->
             options.render doc
-            ig.handleGuiSelection doc
             l "refresh: rendered #{doc}"
           -> l "refresh: no results for the #{options.view} query in #{placeholder}"
 
@@ -170,7 +147,10 @@ do (jQuery)->
         else if arg._deleted or arg.type?
           l "refreshDoc: #{arg}"
           refreshDoc arg
-          ig.handleGuiSelection arg
+          if arg.type is "relation"
+            refreshDoc arg.getSubject()
+            refreshDoc arg.getPredicate()
+            refreshDoc arg.getObject()
           ig.notify "#{arg} got deleted" if arg._deleted
       else
         l "refresh: everything"
@@ -266,14 +246,14 @@ do (jQuery)->
       selectedSpo.push doc
       ig.selectionIndex[doc._id] = selectedSpo.length # (["-", "s", "p", "o"])[selectedSpo.length]
       l "selected: #{doc}"
-      guiDocSelect doc, ig.selectionIndex[doc._id]
+      ig.refresh doc
       makeRelation() if selectedSpo.length is 3
 
     unselect = (doc)->
       selectedSpo.pop()
-      ig.selectionIndex[doc._id] = 0 #'-'
+      ig.selectionIndex[doc._id] = '-'
       l "unselected: #{doc}"
-      guiDocUnSelect doc
+      ig.refresh doc
 
     makeRelation = ->
       l "subject, predicate and object selected, making relation"
@@ -292,8 +272,8 @@ do (jQuery)->
       db.saveDoc relation,
         success: (data)->
           for spo in selectedSpo
-            ig.selectionIndex[spo._id] = 0 #'-'
-            guiDocUnSelect spo
+            ig.selectionIndex[spo._id] = '-'
+            ig.refresh spo
           selectedSpo = []
           ig.doc data.id, (relation)->
             ig.notify "Created: #{relation}"
