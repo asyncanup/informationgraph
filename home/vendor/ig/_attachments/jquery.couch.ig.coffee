@@ -306,7 +306,7 @@ do (jQuery)->
       success: (res)->
         if res is "success"
           ig.notify "#{tag} successfully #{if value is "yes" then "" else "un"}tagged"
-          callback res
+          callback? res
         else
           ig.notify "Could not tag #{tag}"
 
