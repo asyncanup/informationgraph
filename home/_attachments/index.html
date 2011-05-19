@@ -36,7 +36,7 @@
   <script id="itemTemplate" type="text/x-jquery-tmpl">
     <div doc_id="${_id}" class="item">
       <div class="docSelect" title="Select item">
-        <span class="optionText">-</span>
+        <span class="optionText">${igSelectionIndex}</span>
       </div>
       <div class="itemValue" title="Double Click for delete option">
         <span class="docSearch" title="Search for this item">${value}</span>
@@ -67,7 +67,7 @@
         <td class="relationOptionContainer">
           <div class="relationOption docSelect">
             <div class="relationOptionButton" title="Select relation as spo">
-              <span class="optionText">-</span>
+              <span class="optionText">${igSelectionIndex}</span>
             </div>
           </div>
           <div class="relationOption docSearch">
@@ -85,7 +85,7 @@
   <script id="spoTemplate" type="text/x-jquery-tmpl">
     <div doc_id="${_id}" class="spo">
       <div class="docSelect" title="Select doc">
-        <span class="optionText">-</span>
+        <span class="optionText">${igSelectionIndex}</span>
       </div>
       <div class="docSearch" title="Search for this doc">${$item.data.toString()}</div>
     </div>
