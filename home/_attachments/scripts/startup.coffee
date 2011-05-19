@@ -221,7 +221,8 @@ $(document).ready ->
 
 #### TODO list: 
 # 
-# * Complete this _docco_mentation
+# * Use Mustache
 # * Implement hashchange (for back button, history navigation)
+# * Complete this _docco_mentation
 # * Change relation spo's and constituent div's background colors
 # * Bug: Sentences selection doesn't show when the constituent docs slide down
