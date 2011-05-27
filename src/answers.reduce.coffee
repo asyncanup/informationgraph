@@ -1,1 +1,0 @@
-../home/views/answers/reduce.coffee

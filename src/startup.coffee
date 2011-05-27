@@ -1,1 +1,0 @@
-../home/_attachments/scripts/startup.coffee
