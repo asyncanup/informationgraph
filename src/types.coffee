@@ -6,4 +6,4 @@ exports.item = new Type 'item'
   fields:
     created: fields.timestamp()
     value: fields.string
-      widget: widgets.text
+      widget: widgets.text()
