@@ -1,0 +1,27 @@
+<div doc_id="{_id}" class="relation">
+  <table><tr>
+    <td class="sentence">
+      <div class="tick" title="Whether this triplet is a sentence">
+        {?sentence}&#x2714;{:else}-{/sentence}
+      </div>
+    </td>
+    <td class="subject">{{tmpl(subjectDoc) "#spoTemplate"}}</td>
+    <td class="predicate">{{tmpl(predicateDoc) "#spoTemplate"}}</td>
+    <td class="object">{{tmpl(objectDoc) "#spoTemplate"}}</td>
+    <td class="relationOptionContainer">
+      <div class="relationOption docSelect">
+        <div class="relationOptionButton" title="Select relation as spo">
+          <span class="optionText">${igSelectionIndex}</span>
+        </div>
+      </div>
+      <div class="relationOption docSearch">
+        <div class="relationOptionButton" title="Search for this relation">o</div>
+      </div>
+      <div class="separator">|</div>
+      <div class="relationOption docDelete">
+        <div class="relationOptionButton" title="Delete this relation">x</div>
+      </div>
+    </td>
+  </tr></table>
+  <div class="constituents"></div>
+</div>
