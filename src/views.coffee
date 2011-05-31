@@ -20,6 +20,7 @@ exports.itemSuggestions =
       for i in [0...str.length]
         emit str.slice(i), null
 
-#TODO: answers view
 exports.allItems =
   map: (doc)-> emit doc.value, null if doc.type is "item"
+
+#TODO: answers view
