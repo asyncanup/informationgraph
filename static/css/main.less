@@ -1,0 +1,290 @@
+// LESS
+
+/* THEME                  */
+@light-primary-1:   #EBF7FF;
+@light-primary-2:   #E4F4FF;
+@primary:           #DBF1FF;
+@dark-primary-2:    #ABB7BF;
+@dark-primary-1:    #4781A6;
+
+@light-secondary-1: #FFF6EA;
+@light-secondary-2: #FFF2E2;
+@secondary:         #FFEED9;
+@dark-secondary-2:  #BFB6AA;
+@dark-secondary-1:  #A67C46;
+
+@optionDefaultColor:white;
+@optionFocusColor:  maroon;
+
+@relationSelectColor: lighten(@secondary, 4%);
+
+@body-padding-top:  20px;
+@body-padding-left: 2%;
+@default-input-padding: 5px;
+
+@notification: #FFEEBB;
+
+.border-radius(@radius: 3px){
+  border-radius:          @radius;
+  -moz-border-radius:     @radius;
+  -webkit-border-radius:  @radius;
+}
+
+.body-font(){
+  font-family:      Arial, Helvetica, Sans-Serif;
+  font-size:        14px;
+}
+
+body {
+  .body-font;
+  background-color: @light-primary-1;
+  padding:          @body-padding-top @body-padding-left;
+}
+
+input {
+  .body-font;
+  height:           20px;
+  padding:          0 @default-input-padding;
+}
+
+#header {
+  height:           40px;
+  border-bottom:    1px solid @dark-primary-2;
+  margin-bottom:    30px;
+
+  h1 {
+    color:          @dark-primary-1;
+    font-size:      25px;
+  }
+  #login {
+    float:          right;
+    button {
+      background-color: @light-secondary-2;
+      border:           1px solid gray;
+    }
+  }
+}
+
+  #notification {
+    position:         fixed;
+    top:              0;
+    z-index:          100;
+    background-color: @notification;
+    display:          none;
+    left:             40%;
+    padding:          3px 6px;
+    color:            darken(@dark-primary-1, 30%);
+    margin:           auto;
+  }
+
+
+
+@spoOption-width:     18px;
+@spoOption-padding:   2px;
+@spoOption-total-width: @spoOption-width + 2*@spoOption-padding;
+
+@spoMain-width:       150px;
+@spoMain-padding:     8px;
+@spoMain-total-width: @spoMain-width + 2*@spoMain-padding;
+
+@spo-line-height:     25px;
+@spo-width:           @spoMain-total-width + @spoOption-total-width;
+
+@sidebar-main-gap:    20px;
+
+.itemInput(@border:   1px solid gray, @focus-border: 1px solid black) {
+  background-color:   lighten(@light-secondary-2, 3%);
+  border:             @border;
+  &:hover {
+    background-color: @light-secondary-2;
+  }
+  &:focus {
+    border:           @focus-border;
+  }
+}
+
+/* For .docSelect and .docDelete */
+.spoOption(){
+  cursor:           pointer;
+  padding:          0 @spoOption-padding;
+  width:            @spoOption-width;
+  text-align:       center;
+  color:            @optionDefaultColor;
+  float:            right;
+  background-color: @dark-secondary-2;
+  &:hover {
+    color:          @optionFocusColor;
+  }
+}
+
+/* For .itemValue and .itemEditForm input */
+.spoMain(){
+  margin-right:     @spoOption-total-width;
+  width:            @spoMain-width;
+  padding:          0 @spoMain-padding;
+}
+
+.spoStuff() {
+  line-height:        @spo-line-height;
+  height:             @spo-line-height;
+  overflow:           hidden;
+  background-color:   @light-primary-2;
+  border:             1px solid @dark-primary-2;
+  &:hover {
+    background-color: darken(@light-primary-2, 5%);
+  }
+  .docSelect {
+    .spoOption;
+  }
+  .docSearch {
+    .spoMain;
+    &:hover {
+      cursor:           pointer;
+      text-decoration:  underline;
+    }
+  }
+}
+.item {
+  .spoStuff;
+  .itemValue {
+    .spoMain;
+    cursor:             default;
+    .docSearch {
+      padding:          0;
+    }
+  }
+  .itemEdit {
+    margin-right:     @spoOption-total-width;
+    .itemEditForm {
+      input {
+        .itemInput(0, 0);
+        .spoMain;
+        height:             @spo-line-height - 1;
+        margin-right:       0;
+        background-color:   white;
+        &:hover {
+          background-color: white;
+        }
+      }
+    }
+  }
+  .docDelete {
+    .spoOption;
+  }
+}
+.spo {
+  .spoStuff;
+}
+.selected(@bgColor: @secondary) {
+  background-color:   @bgColor;
+  &:hover {
+    background-color: @bgColor;
+  }
+}
+.itemSelected {
+  .selected;
+  .docSelect {
+    color:            @optionFocusColor;
+  }
+}
+.spoSelected {
+  .selected;
+  .docSelect {
+    color:            @optionFocusColor;
+  }
+}
+
+.relation {
+  border:                   1px solid transparent;
+  &:hover {
+    background-color:       @relationSelectColor;
+  }
+  table {
+    margin:                 auto;
+  }
+  padding:                  5px;
+  .spo {
+    .docSearch {
+      .spoMain;
+    }
+  }
+  .sentence {
+    width:                  15px;
+    padding-right:          5px;
+    vertical-align:         middle;
+    text-align:             center;
+    color:                  darkgray;
+    .tick {
+      cursor:               pointer;
+      &:hover {
+        color:              black;
+      }
+    }
+  }
+  .constituents {
+  }
+  .relationSelect {
+    
+  }
+  .relationOptionContainer {
+    padding-left:             8px;
+    .separator {
+      color:                  lightgrey;
+      display:                inline;
+    }
+    .relationOption {
+      display:                inline;
+      vertical-align:         middle;
+      color:                  @optionDefaultColor;
+      cursor:                 pointer;
+      &:hover {
+        color:                @optionFocusColor;
+      }
+      .relationOptionButton {
+        .border-radius(9px);
+        display:              inline;
+        border:               1px solid gray;
+        background-color:     @dark-secondary-2;
+        margin:               0 2px;
+        padding:              0 3px;
+        text-align:           center;
+      }
+    }
+  }
+}
+.relationSelected {
+  .selected(@relationSelectColor);
+  .relationSelect {
+    color:            @optionFocusColor;
+  }
+  border:                     1px solid lightgrey;
+}
+
+#main {
+  #sidebar {
+    float:                  left;
+    #itemFilter {
+      .itemInput;
+      width:                @spo-width - 2*@default-input-padding;
+      margin-bottom:        3px;
+      .border-radius;
+    }
+    .newItem {
+      input {
+        .itemInput;
+        .border-radius;
+        width:              @spoMain-total-width - 2*@default-input-padding;
+        margin-top:         2px;
+      }
+    }
+  }
+  #content {
+    position:               relative;
+    top:                    0;
+    margin-left:            @spo-width + @sidebar-main-gap;
+  }
+}
+
+.spacer {
+  clear:                    both;
+}

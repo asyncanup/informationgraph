@@ -1,4 +1,4 @@
-{shortenItem} = require "./shortenItem"
+{shorten} = require "./item"
 
 exports.sentences =
   map: (doc)->
@@ -16,7 +16,7 @@ exports.relations =
 exports.itemSuggestions =
   map: (doc)->
     if doc.type is "item"
-      str = shortenItem doc.value
+      str = shorten doc.value
       for i in [0...str.length]
         emit str.slice(i), null
 

@@ -1,4 +1,4 @@
-exports.shortenItem = (str, options)->
+exports.shorten = (str, options)->
   options ?= {}
   throw "shortenItem needs str" unless str?
   str = str.trim().replace /\s+/g, ' '

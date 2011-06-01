@@ -1,18 +1,42 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
-  <head> 
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
-    <title>{title}</title> 
-  </head> 
-  <body> 
-    <div id="content">
-      {content|s}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Information Graph - {title}</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"> 
+    <link rel="stylesheet" href="{baseURL}/static/css/reset.css" type="text/css">
+    <link rel="stylesheet/less" href="{baseURL}/static/css/main.less" type="text/css">
+  </head>
+  <body>
+
+    <div id="header">
+      <h1>Information Graph</h1>
+      <div id="notification"></div>
     </div>
-    <script src="{baseURL}/static/js/jquery-1.5.2.min.js"></script>
-    <script src="{baseURL}/static/js/json2.js"></script>
-    <script src="{baseURL}/static/js/history.adapter.jquery.js"></script>
-    <script src="{baseURL}/static/js/history.js"></script>
-    <script src="{baseURL}/static/js/history.html4.js"></script>
-    <script src="{baseURL}/kanso.js"></script>
+
+    <div id="main">
+      <div id="sidebar">
+        <input type="text" id="itemFilter"
+               title="Filter items" value="Search"/>
+        <div id="itemList">
+        </div>
+        <form class="newItem">
+          <input type="text" name="newItemValue" 
+                 title="Enter item value" value="Add New Item"/>
+        </form>
+      </div>
+      <div id="content">{content}</div>
+        <!--<div id="queryRelationList"></div>-->
+    </div>
+
+    <div class="spacer"></div>
+    <div id="footer"></div>
+
   </body>
+  <script src="{baseURL}/static/js/jquery-1.5.2.min.js"></script>
+  <script src="{baseURL}/static/js/less-1.0.41.min.js"></script>
+  <script src="{baseURL}/static/js/history.adapter.jquery.js"></script>
+  <script src="{baseURL}/static/js/history.js"></script>
+  <script src="{baseURL}/static/js/history.html4.js"></script>
+  <script src="{baseURL}/kanso.js"></script>
+  <script src="{baseURL}/static/js/startup.js"></script>
 </html>

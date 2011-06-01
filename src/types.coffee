@@ -24,10 +24,8 @@ exports.relation = new Type 'relation'
     object: fields.string
       required: true
 
-    docs: fields.embedList
-      type: 'item'
-      description: "The subject, predicate, object and the contained docs"
+    docs: fields.array()
 
     sentence: fields.boolean
       omit_empty: true
-      description: "Whether this relation is tagged as 'sentence'"
+      description: "Whether this relation is a sentence"
