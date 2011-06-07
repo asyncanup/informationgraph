@@ -24,7 +24,7 @@ exports.relation = new Type 'relation'
     object: fields.string
       required: true
 
-    docs: fields.array()
+    #TODO: docs
 
     sentence: fields.boolean
       omit_empty: true
