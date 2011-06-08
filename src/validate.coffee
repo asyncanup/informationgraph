@@ -1,7 +1,7 @@
 types = require 'kanso/types'
 app_types = require './types'
 
-require = (field, context, message)->
+hasProperty = (field, context, message)->
   message ?= "#{context.type} missing a #{field}"
   for prop in field.split "."
     if not context[prop]
@@ -11,11 +11,11 @@ require = (field, context, message)->
 deepCheck = (spo_id, alldocs)->
   spo = alldocs[spo_id]
   if spo.type is "item"
-    require "value", spo
+    hasProperty "value", spo
   else if spo.type is "relation"
-    require "subject", spo
-    require "predicate", spo
-    require "object", spo
+    hasProperty "subject", spo
+    hasProperty "predicate", spo
+    hasProperty "object", spo
     deepCheck spo.subject, alldocs
     deepCheck spo.predicate, alldocs
     deepCheck spo.object, alldocs

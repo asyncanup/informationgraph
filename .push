@@ -1,0 +1,4 @@
+#! /bin/sh
+coffee --watch --compile --bare -o lib/ -c src/ &
+kanso pushadmin http://anup:password@localhost:5984/informationgraph
+kanso push http://anup:password@localhost:5984/informationgraph
