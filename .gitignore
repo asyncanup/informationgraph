@@ -7,3 +7,4 @@ pids
 .couchapprc
 .releases
 .loginData.js
+.DS_Store
